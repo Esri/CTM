@@ -10,7 +10,7 @@ The schema of CTM is based on the National System for Geospatial Intelligence Fe
 For more information about the NFDD specification visit - https://nsgreg.nga.mil/fdd/registers.jsp?register=NFDD.  On this page, you will see links that allow you to browse or search the NFDD specification for a complete list of feature and attribute types.  
 
 Features
-=
+--
   - Sample Geodatabase
   - Template Map Document
   - Style File
