@@ -19,6 +19,7 @@ Features
   - Product Library (contains the editing and cartographic specifications)
 
 Instructions
+==
   1.  Download the repro
   2.  Open the Template Map Document
   3.  Connect to the Product Library
@@ -26,14 +27,17 @@ Instructions
   5.  Use the Map Generator tool in the Python Toolbox to generate a new PDF
 
 Requirements:
+==
   1.  ArcGIS 10.3
   2.  Esri Production Mapping
   
 Contributing
+==
 
 Esri welcomes contributions from anyone and everyone. Please see our guidelines for contributing:  https://github.com/esri/contributing
 
 Licensing
+==
 
 Copyright 2014 Esri
 
