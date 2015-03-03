@@ -141,7 +141,9 @@ class MapGenerator(object):
             # uncomment code for debugging in python IDEs
             #test = arcpy.CheckExtension("foundation")
             #arcpy.CheckOutExtension('foundation')
-            
+            #product_json = '{"productName":"Fixed 25K","makeMapScript":"Fixed25K.pyt","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_UTM_WGS84_grid.xml","pageMargin":"0","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453869.338275107,4938870.05400884],[-12453869.339388302,4957186.4929140275],[-12439954.400256153,4957186.4943807106],[-12439954.399142958,4938870.0554727865],[-12453869.338275107,4938870.05400884]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"scale":500000,"pageSize":"LETTER PORTRAIT","quad_id":403011145,"mapSheetName":"Draper","customName":""}'
+
+
             # Gets the inputs
             product_json = parameters[0].value
             product = json.loads(product_json)
