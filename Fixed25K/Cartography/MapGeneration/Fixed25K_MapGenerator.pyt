@@ -103,7 +103,7 @@ class MapGenerator(object):
             if element.name == "Title Text":
                 element.text = map_name.upper()
             elif element.name == "Country Name":
-                element.text = state_name
+                element.text = state_name.upper()
             elif element.name == "MapInformationLL":
                 element.text = element.text.replace('<%map_name%>', mapsheetname)
                 element.text = element.text.replace('<%map_series%>', str(mapseries))
@@ -117,7 +117,7 @@ class MapGenerator(object):
             elif element.name == "Date Time Text":
                 element.text = element.text.replace('<%Map Name%>', mapsheetname)
         del layout_element_list
-        arcpy.AddMessage("Updating the Lyout Surround Elements...")
+        arcpy.AddMessage("Updating the Layout Surround Elements...")
         return
 
     def execute(self, parameters, messages):
@@ -200,7 +200,7 @@ class MapGenerator(object):
                             lyr.visible = False
 
                 grid = arcpyproduction.mapping.Grid(os.path.join(product_location, product.gridXml))
-                new_aoi = aoi.projectAs(data_frame.spatialReference)
+                new_aoi = aoi.projectAs(grid.baseSpatialReference)
                 aoi_centroid = arcpy.Geometry("point", new_aoi.centroid, grid.baseSpatialReference)
 
                 arcpy.AddMessage("data_frame.extent = " + str(data_frame.extent))
@@ -212,14 +212,14 @@ class MapGenerator(object):
                                                data_frame.elementHeight,
                                                aoi_centroid, 25000)
 
-                arcpy.AddMessage("map_aoi.extent = " + str(map_aoi.extent))
+                new_map_aoi = map_aoi.projectAs(data_frame.spatialReference)
+                arcpy.AddMessage("map_aoi.extent = " + str(new_aoi.extent))
 
-                data_frame.panToExtent(map_aoi.extent)
-
+                data_frame.panToExtent(new_map_aoi.extent)
                 arcpy.AddMessage("data_frame.extent = " + str(data_frame.extent))
 
                 #arcpyproduction.mapping.ClipDataFrameToGeometry(data_frame, aoi)
-                #final_mxd.save()
+                final_mxd.save()
 
                 # Full-size export
                 preview_name = "_ags_" + map_doc_name + "_preview.jpg"
@@ -543,7 +543,7 @@ class MapGenerator(object):
                 parameters[1].value = file_name
 
                 # Delete feature dataset created for grid (Option for Development)
-                arcpy.Delete_management(gfds)
+                #arcpy.Delete_management(gfds)
 
                 del final_mxd, grid
 
@@ -559,7 +559,7 @@ class MapGenerator(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = ReconcileAndPost()
+    #g = MapGenerator()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
