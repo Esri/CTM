@@ -1,4 +1,4 @@
-# Copyright 2015 Esri
+# Copyright 2014 Esri
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import datetime
 import traceback
 
 # Path to the Products folder
-shared_products_path = r"\\<yourServer>\arcgisserver\MCS_POD\Products"
+shared_products_path = r"\\SHEFFIELDJ\arcgisserver\MCS_POD\Products"
 
 # Path to the ArcGIS Server output directory
-output_directory = r"\\<yourServer>\arcgisserver\directories\arcgisoutput"
-output_url = r"http://<yourServer>/arcgis/rest/directories/arcgisoutput/"
+output_directory = r"\\SHEFFIELDJ\arcgisserver\directories\arcgisoutput"
+output_url = r"http://SHEFFIELDJ.esri.com:6080/arcgis/rest/directories/arcgisoutput/"
 
 def get_largest_data_frame(mxd):
     """Returns the largest data frame from mxd"""
@@ -211,7 +211,7 @@ def convert_units(value, from_units, to_units):
 
 
 def export_map_document(product_location, mxd, map_doc_name, data_frame,
-                        outputdirectory, export_type):
+                        outputdirectory, export_type, production_xml):
     """Exports MXD to chosen file type"""
 
     try:
@@ -339,17 +339,19 @@ def export_map_document(product_location, mxd, map_doc_name, data_frame,
         elif export == 'PRODUCTION PDF' or export == 'MULTI-PAGE PDF':
             filename = "_ags_" + map_doc_name  + ".pdf"
             outfile = os.path.join(outputdirectory, filename)
-            setting_file = os.path.join(product_location, "colormap.xml")
+            setting_file = os.path.join(product_location, production_xml)
 
             if os.path.exists(setting_file) == True:
                 arcpyproduction.mapping.ExportToProductionPDF(mxd, outfile,
                                                               setting_file)
+                arcpy.AddMessage("Production PDF is located: " + outfile)
             else:
-                arcpy.AddError("Color mapping rules file doesn't exist, using "
+                arcpy.AddMessage("Production PDF is the default exporter for a Multi-page PDF.")
+                arcpy.AddWarning("Color mapping rules file doesn't exist, using "
                                "standard ExportToPDF exporter with default "
                                "settings.")
-
-            arcpy.AddMessage("Production PDF is located: " + outfile)
+                arcpy.mapping.ExportToPDF(mxd, outfile)
+                arcpy.AddMessage("PDF is located: " + outfile)
             return filename
 
         else:

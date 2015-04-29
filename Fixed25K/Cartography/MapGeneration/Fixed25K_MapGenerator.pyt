@@ -45,14 +45,14 @@ class Toolbox(object):
         self.label = "Fixed 25K Tools"
         self.alias = "fixed25kTools"
         # List of tool classes associated with this toolbox
-        self.tools = [MapGenerator]
+        self.tools = [MapGenerator, DesktopGateway]
 
 class MapGenerator(object):
     """ Class that contains the code to generate a new map based off the input aoi"""
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Generate Map"
+        self.label = "Map Generation JSON"
         self.description = "Python Script used to create the a new map at a 1:25000 scale"
         self.canRunInBackground = False
 
@@ -75,7 +75,7 @@ class MapGenerator(object):
                                       datatype="GPString",
                                       parameterType="Derived")
 
-        product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed25K.pyt","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_UTM_WGS84_grid.xml","pageMargin":"0","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453869.338275107,4938870.05400884],[-12453869.339388302,4957186.4929140275],[-12439954.400256153,4957186.4943807106],[-12439954.399142958,4938870.0554727865],[-12453869.338275107,4938870.05400884]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"scale":500000,"pageSize":"LETTER PORTRAIT","quad_id":403011145,"mapSheetName":"Draper","customName":""}'
+        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed25K_MapGenerator.pyt","toolName":"MapGenerator","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453869.338275107,4938870.05400884],[-12453869.339388302,4957186.4929140275],[-12439954.400256153,4957186.4943807106],[-12439954.399142958,4938870.0554727865],[-12453869.338275107,4938870.05400884]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":3.5201989238640496e-006,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","quad_id":403011145,"mapSheetName":"Draper","customName":""}'
         params = [product_as_json, output_file]
         return params
 
@@ -119,36 +119,47 @@ class MapGenerator(object):
         del layout_element_list
         arcpy.AddMessage("Updating the Layout Surround Elements...")
         return
-
+            
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        import zipfile
+        
         try:
             arcpy.env.overwriteOutput = True
-
-            # Makes sure the output directory exists
-            if arcpy.Exists(self.outputdirectory) != True:
-                arcpy.AddError(self.outputdirectory + " doesn't exist")
-                raise arcpy.ExecuteError
 
             #Getting the Data and time
             timestamp = Utilities.get_date_time()
 
             #Paths to the ArcGIS Scratch workspaces
-            scratch_folder = arcpy.env.scratchFolder
             scratch_workspace = arcpy.env.scratchGDB
 
             # uncomment code for debugging in python IDEs
-            #test = arcpy.CheckExtension("foundation")
-            #arcpy.CheckOutExtension('foundation')
+            test = arcpy.CheckExtension("foundation")
+            arcpy.CheckOutExtension('foundation')
 
             # Gets the inputs and converts to a Python Object
             product_json = parameters[0].value
             product = json.loads(product_json)
             product = Utilities.DictToObject(product)
+            
+            # Setting a working directory
+            if "workingDirectory" in product.keys():
+                scratch_folder = product.workingDirectory
+                self.outputdirectory = product.workingDirectory
+                self.shared_prod_path = os.path.dirname(product.mxd)
+                # Sets the product_name to nothing, as this is already in the shared_prod_path variable
+                product_name = ""                
+            else:
+                scratch_folder = arcpy.env.scratchFolder
+                # Gets the Product Name
+                product_name = product.productName
+            
+            # Makes sure the output directory exists
+            if arcpy.Exists(self.outputdirectory) != True:
+                arcpy.AddError(self.outputdirectory + " doesn't exist")
+                raise arcpy.ExecuteError
 
-            # Gets the Product Name
-            product_name = product.productName
-
+                
             # Gets the Map Name
             # Default is the Custom Name
             # uses the Map Sheet Name if the Custom Name is blank
@@ -165,7 +176,10 @@ class MapGenerator(object):
             # Gets the product folder
             product_location = os.path.join(self.shared_prod_path, product_name)
             # Gets the mxd path
-            mxd_path = os.path.join(product_location, product.mxd)
+            if arcpy.Exists(os.path.dirname(product.mxd)) != True:
+                mxd_path = os.path.join(product_location, product.mxd)
+            else:
+                mxd_path = product.mxd
 
             # Validates the template mxd exists
             if arcpy.Exists(mxd_path) != True:
@@ -176,11 +190,34 @@ class MapGenerator(object):
             map_doc_name = map_name + "_" + timestamp
             arcpy.AddMessage("Creating the map for the " + map_name + " aoi...")
             final_mxd_path = os.path.join(scratch_folder, map_doc_name + ".mxd")
+            arcpy.AddMessage("MXD path is: " + final_mxd_path)
             shutil.copy(mxd_path, final_mxd_path)
             del mxd_path
 
             # Gets the mxd object
             final_mxd = arcpy.mapping.MapDocument(final_mxd_path)
+            
+            # Validates the job mxd does not have broken links
+            layerlist = arcpy.mapping.ListLayers(final_mxd)
+            broken_layer = False
+            for layer in layerlist:
+                broken_layer = layer.isBroken
+                if broken_layer == True:
+                    arcpy.AddError("Map Document has boken data soruces.")
+                    exit(0)
+                
+            
+            
+            # Updating the Data Sources to the Production Database if provided.
+            if "productionWorkspace" in product.keys():
+                if product.productionWorkspace != "None":
+                    production_database = product.productionWorkspace
+                    arcpy.AddMessage("Getting the list of data frames.")
+                    for layer in layerlist:
+                        #arcpy.AddMessage("Replacing data source for layer: " + str(layer))
+                        layer.replaceDataSource(production_database, "FILEGDB_WORKSPACE", "", True)
+                    final_mxd.save()
+            
             # Gets the largest data frame (page size not data frame extent)
             data_frame = Utilities.get_largest_data_frame(final_mxd)
 
@@ -234,7 +271,14 @@ class MapGenerator(object):
                 grid_fds_name = "Grids_WGS84" + timestamp
 
                 # Gets the Grid XML path
-                grid_xml = os.path.join(self.shared_prod_path, product_name, non_zipper_xml)
+                #grid_xml = os.path.join(self.shared_prod_path, product_name, non_zipper_xml)
+                
+                if arcpy.Exists(os.path.dirname(product.gridXml)) != True:
+                    grid_xml = os.path.join(product_location, product.gridXml)
+                    
+                else:
+                    grid_xml = product.gridXml                
+
                 if arcpy.Exists(grid_xml) != True:
                     arcpy.AddError(non_zipper_xml + " doesn't exist at " + os.path.join(self.shared_prod_path, product_name) + ".")
                     raise arcpy.ExecuteError
@@ -256,6 +300,20 @@ class MapGenerator(object):
                 csz_fc_location = os.path.join(self.shared_prod_path,
                                                product_name,
                                                coord_system_file_gdb)
+                # Checks to see if the CoodinateSystemZones.gdb is in the Product Location
+                # If not it will be extracted from the install location.
+                if os.path.exists(csz_fc_location) != True:
+                    arcpy.AddMessage("The CoordinateSystemZones.gdb doesn't exist in %s. The database will be extracted." %os.path.join(self.shared_prod_path,
+                                               product_name,
+                                               coord_system_file_gdb))
+                    install_location = arcpy.GetInstallInfo()['InstallDir']
+                    zipped_file = os.path.join(install_location, r"GridTemplates\ProductionMapping", "CoordinateSystemZones.zip")
+                    z = zipfile.ZipFile(zipped_file)
+                    z.extractall(os.path.join(self.shared_prod_path, product_name))
+
+                    arcpy.AddMessage("CoordinateSystemZones.gdb extracted successfully at %s." %os.path.join(self.shared_prod_path, product_name))
+                                       
+
                 temp_fc = os.path.join(csz_fc_location, utm_zone_fc)
                 utm_lyr = arcpy.mapping.Layer(temp_fc)
                 arcpy.SelectLayerByLocation_management(utm_lyr, "INTERSECT", aoi)
@@ -356,178 +414,134 @@ class MapGenerator(object):
 
                 #Gets the list of layout elements
                 layout_elements = arcpy.mapping.ListLayoutElements(final_mxd)
+                
+                product.quad_id = ""
 
                 # Makes the mask layer invisible and prepares map for save
                 anno_mask.visible = "false"
-
                 #Logic for update the adjoining sheet and location diagrams
-                if product.quad_id == "":
-                    arcpy.AddMessage("This is a custom extent")
+                
+                arcpy.AddMessage("This is a custom extent")
 
-                    map_aoi_layer = None
+                map_aoi_layer = None
 
-                    # Creates a new AOI Feature class to
-                    layers = arcpy.mapping.ListLayers(final_mxd, "", data_frame)
-                    for layer in layers:
-                        if layer.name == "Map_AOI":
-                            map_aoi_layer = layer
-                            layer_sr = arcpy.Describe(layer).spatialReference
-                            break
-                    del layers, layer
+                # Creates a new AOI Feature class to
+                layers = arcpy.mapping.ListLayers(final_mxd, "", data_frame)
+                for layer in layers:
+                    if layer.name == "Map_AOI":
+                        map_aoi_layer = layer
+                        layer_sr = arcpy.Describe(layer).spatialReference
+                        break
+                del layers, layer
 
-                    # Creates a temporary AOI feature class
-                    custom_aoi_fc = arcpy.CreateFeatureclass_management(scratch_workspace,
-                                                                        "Custom_Map_AOI",
-                                                                        "POLYGON",
-                                                                        "",
-                                                                        "",
-                                                                        "",
-                                                                        layer_sr)
-                    arcpy.AddField_management(custom_aoi_fc, "AOI_Name", "TEXT")
-                    # Creates the AOI feature in the AOI Feature class
-                    insert_fields = ['SHAPE@', "AOI_Name"]
-                    in_cur = arcpy.da.InsertCursor(custom_aoi_fc, insert_fields)
-                    in_cur.insertRow([aoi, product.mapSheetName])
+                # Creates a temporary AOI feature class
+                custom_aoi_fc = arcpy.CreateFeatureclass_management(scratch_workspace,
+                                                                    "Custom_Map_AOI",
+                                                                    "POLYGON",
+                                                                    "",
+                                                                    "",
+                                                                    "",
+                                                                    layer_sr)
+                arcpy.AddField_management(custom_aoi_fc, "AOI_Name", "TEXT")
+                # Creates the AOI feature in the AOI Feature class
+                insert_fields = ['SHAPE@', "AOI_Name"]
+                in_cur = arcpy.da.InsertCursor(custom_aoi_fc, insert_fields)
+                in_cur.insertRow([aoi, product.mapSheetName])
 
-                    # Makes the Temp AOI FC a layer
-                    custom_aoi_layer = arcpy.MakeFeatureLayer_management(custom_aoi_fc, "Custom_AOI_Index")
-                    custom_aoi_lyr = None
-                    for aoi in custom_aoi_layer:
-                        if aoi.name == "Custom_AOI_Index":
-                            custom_aoi_lyr = aoi
-                    del in_cur, custom_aoi_fc
+                # Makes the Temp AOI FC a layer
+                custom_aoi_layer = arcpy.MakeFeatureLayer_management(custom_aoi_fc, "Custom_AOI_Index")
+                custom_aoi_lyr = None
+                for aoi in custom_aoi_layer:
+                    if aoi.name == "Custom_AOI_Index":
+                        custom_aoi_lyr = aoi
+                del in_cur
 
-                    #Updating the Adjoining Sheet Guide
-                    layers = arcpy.mapping.ListLayers(final_mxd, "", adjoining_data_frame)
-                    for layer in layers:
-                        if layer.name == "Index_AOI":
-                            # Copies the symbology from the existing AOI Layer
-                            arcpy.ApplySymbologyFromLayer_management(custom_aoi_layer, layer)
-                            # Adds the temp AOI FC
-                            arcpy.mapping.AddLayer(adjoining_data_frame, custom_aoi_lyr, "TOP")
-                            # Removes the AOI Index Layer
-                            arcpy.mapping.RemoveLayer(adjoining_data_frame, layer)
-                            # Pans and zooms the DF to the correct location for the new AOI Layer
-                            arcpy.SelectLayerByAttribute_management(custom_aoi_lyr, "CLEAR_SELECTION")
-                            sql_statement = "AOI_Name = '" + str(product.mapSheetName) + "'"
-                            arcpy.SelectLayerByAttribute_management(custom_aoi_lyr, "NEW_SELECTION", sql_statement)
-                            adjoining_data_frame.extent = custom_aoi_lyr.getSelectedExtent()
-                            adjoining_data_frame.scale = 690000
-                            arcpy.SelectLayerByAttribute_management(custom_aoi_lyr, "CLEAR_SELECTION")
-                            break
-                    arcpy.AddMessage("Updating the Adjoining Sheet Data Frame...")
-                    del layers
+                #Updating the Adjoining Sheet Guide
+                layers = arcpy.mapping.ListLayers(final_mxd, "", adjoining_data_frame)
+                for layer in layers:
+                    if layer.name == "Index_AOI":
+                        # Copies the symbology from the existing AOI Layer
+                        arcpy.ApplySymbologyFromLayer_management(custom_aoi_layer, layer)
+                        # Adds the temp AOI FC
+                        arcpy.mapping.AddLayer(adjoining_data_frame, custom_aoi_lyr, "TOP")
+                        # Removes the AOI Index Layer
+                        arcpy.mapping.RemoveLayer(adjoining_data_frame, layer)
+                        # Pans and zooms the DF to the correct location for the new AOI Layer
+                        arcpy.SelectLayerByAttribute_management(custom_aoi_lyr, "CLEAR_SELECTION")
+                        sql_statement = "AOI_Name = '" + str(product.mapSheetName) + "'"
+                        arcpy.SelectLayerByAttribute_management(custom_aoi_lyr, "NEW_SELECTION", sql_statement)
+                        adjoining_data_frame.extent = custom_aoi_lyr.getSelectedExtent()
+                        adjoining_data_frame.scale = 690000
+                        arcpy.SelectLayerByAttribute_management(custom_aoi_lyr, "CLEAR_SELECTION")
+                        break
+                arcpy.AddMessage("Updating the Adjoining Sheet Data Frame...")
+                del layers
 
-                    # Updating the Boundaries Data Frame
-                    arcpy.AddMessage(str(boundaries_data_frame.spatialReference))
-                    boundaries_data_frame.spatialReference = grid.baseSpatialReference
-                    layers = arcpy.mapping.ListLayers(final_mxd, "", boundaries_data_frame)
-                    index_aoi = None
-                    us_states = None
-                    for layer in layers:
-                        if layer.name == "Index_AOI":
-                            index_aoi = layer
-                        elif layer.name == "US_States":
-                            us_states = layer
-                    del layers
-                    # Adding the custom AOI Layer
-                    arcpy.mapping.AddLayer(boundaries_data_frame, custom_aoi_lyr, "TOP")
-                    # Removing the current AOI Index Layer
-                    arcpy.mapping.RemoveLayer(boundaries_data_frame, index_aoi)
+                # Updating the Boundaries Data Frame
+                arcpy.AddMessage(str(boundaries_data_frame.spatialReference))
+                boundaries_data_frame.spatialReference = grid.baseSpatialReference
+                layers = arcpy.mapping.ListLayers(final_mxd, "", boundaries_data_frame)
+                index_aoi = None
+                us_states = None
 
-                    # Determining which US State interested the Custom AOI
-                    arcpy.SelectLayerByLocation_management(us_states, "INTERSECT", custom_aoi_lyr, "#", "NEW_SELECTION")
-                    state_name = None
-                    with arcpy.da.SearchCursor(us_states, ["STATE_NAME"]) as s_cursor:
+                for layer in layers:
+                    if layer.name == "Index_AOI":
+                        index_aoi = layer
+                    elif layer.name == "US_States":
+                        us_states = layer
+                del layers
+                us_states_count = arcpy.GetCount_management(us_states)
+                arcpy.AddMessage("US States get is: "+ str(us_states_count))
+                # Adding the custom AOI Layer
+                arcpy.mapping.AddLayer(boundaries_data_frame, custom_aoi_lyr, "TOP")
+                # Removing the current AOI Index Layer
+                arcpy.mapping.RemoveLayer(boundaries_data_frame, index_aoi)
+                us_states.definitionQuery = ""
+                us_states_count = arcpy.GetCount_management(us_states)
+                arcpy.AddMessage("US States get is: "+ str(us_states_count))              
+
+                # Determining which US State interested the Custom AOI
+                arcpy.SelectLayerByLocation_management(us_states, "INTERSECT", custom_aoi_lyr, "#", "NEW_SELECTION")
+                us_states_count = arcpy.GetCount_management(us_states)
+                arcpy.AddMessage("US States get is: "+ str(us_states_count))                
+                state_name = None
+                with arcpy.da.SearchCursor(us_states, ["STATE_NAME"]) as s_cursor:
+                    for row in s_cursor:
+                        state_name = row[0]
+                        break
+                arcpy.SelectLayerByAttribute_management(us_states, "CLEAR_SELECTION")
+
+                # Updating the States Layer with the correct State
+                us_states.definitionQuery = "STATE_NAME = '" + str(state_name) + "'"
+                sql_querry = "STATE_NAME = '" + str(state_name) + "'"
+                arcpy.AddMessage(sql_querry)
+                arcpy.SelectLayerByAttribute_management(us_states, "NEW_SELECTION", sql_querry)
+                # Zooming to the correct State
+                boundaries_data_frame.zoomToSelectedFeatures()
+                arcpy.SelectLayerByAttribute_management(us_states, "CLEAR_SELECTION")
+                arcpy.AddMessage("Updating the Boundaries Data Frame...")
+
+                # Setting the Map Sheet Information
+                map_aoi_layer.definitionQuery = ""
+                arcpy.SelectLayerByLocation_management(map_aoi_layer, "CONTAINS", custom_aoi_lyr, "#", "NEW_SELECTION")
+                aoi_count = arcpy.GetCount_management(map_aoi_layer)
+                map_series = None
+                map_edition = None
+                map_sheet = None                
+                if int(aoi_count.getOutput(0)) == 1:
+                    with arcpy.da.SearchCursor(map_aoi_layer, ["SHEET", "SERIES", "EDITION"]) as s_cursor:
                         for row in s_cursor:
-                            state_name = row[0]
-                            break
-                    arcpy.SelectLayerByAttribute_management(us_states, "CLEAR_SELECTION")
-
-                    # Updating the States Layer with the correct State
-                    us_states.definitionQuery = "STATE_NAME = '" + str(state_name) + "'"
-                    sql_querry = "STATE_NAME = '" + str(state_name) + "'"
-                    arcpy.AddMessage(sql_querry)
-                    arcpy.SelectLayerByAttribute_management(us_states, "NEW_SELECTION", sql_querry)
-                    # Zooming to the correct State
-                    boundaries_data_frame.zoomToSelectedFeatures()
-                    arcpy.SelectLayerByAttribute_management(us_states, "CLEAR_SELECTION")
-                    arcpy.AddMessage("Updating the Boundaries Data Frame...")
-
-                    # Setting the Map Sheet Information
+                            map_series = row[1]
+                            map_edition = row[2]
+                            map_sheet = row[0]                     
+                else:
                     map_series = "Custom Extent"
                     map_edition = "Custom Extent"
                     map_sheet = "Custom Extent"
-                    # Updating the Surround Elements
-                    MapGenerator.updateLayoutElements(self, layout_elements, map_name, state_name, product.mapSheetName, map_series, map_edition, map_sheet)
 
-                else:
-                    arcpy.AddMessage("This is a fixed extent")
-
-                    map_aoi_layer = None
-
-                    # Resets to Definition Querry for the AOI FC
-                    layers = arcpy.mapping.ListLayers(final_mxd, "", data_frame)
-                    for layer in layers:
-                        if layer.name == "Map_AOI":
-                            arcpy.AddMessage(layer.definitionQuery)
-                            layer.definitionQuery = "SECOORD = " + str(product.quad_id)
-                            arcpy.AddMessage(layer.definitionQuery)
-                            map_aoi_layer = layer
-                            arcpy.AddMessage(map_aoi_layer.definitionQuery)
-
-                    del layers
-
-                    # Updates the Map Sheet Information
-                    map_series = None
-                    map_edition = None
-                    map_sheet = None
-                    state_name = None
-
-                    # Gets the Map Sheet Information from the AOI Layer
-                    with arcpy.da.SearchCursor(map_aoi_layer, ["SHEET", "SERIES", "EDITION", "STATE_NAME1"]) as s_cursor:
-                        for row in s_cursor:
-                            state_name = row[3]
-                            map_series = row[1]
-                            map_edition = row[2]
-                            map_sheet = row[0]
-                    arcpy.AddMessage("Getting the Map Sheet Information...")
-                    state_name = state_name.lower()
-                    state_name = state_name[0].upper() + state_name[1:]
-                    arcpy.AddMessage(state_name)
-
-                    # Updates the Surround Elemtns
-                    MapGenerator.updateLayoutElements(self, layout_elements, map_name, state_name, product.mapSheetName, map_series, map_edition, map_sheet)
-
-                    #Updating the Adjoining Sheet Guide for the AOI
-                    layers = arcpy.mapping.ListLayers(final_mxd, "", adjoining_data_frame)
-                    for layer in layers:
-                        if layer.name == "Index_AOI":
-                            layer.definitionQuery = "SECOORD = " + str(product.quad_id)
-                            arcpy.SelectLayerByAttribute_management(layer, "NEW_SELECTION", "SECOORD = " + str(product.quad_id))
-                            adjoining_data_frame.zoomToSelectedFeatures()
-                            adjoining_data_frame.scale = 690000
-                            arcpy.SelectLayerByAttribute_management(layer, "CLEAR_SELECTION")
-                            break
-                    arcpy.AddMessage("Updating the Adjoining Sheet Data Frame...")
-                    del layers
-
-                    #Updating the Boundaries Data Frame for the AOI
-                    boundaries_data_frame.spatialReference = grid.baseSpatialReference
-                    layers = arcpy.mapping.ListLayers(final_mxd, "", boundaries_data_frame)
-                    for layer in layers:
-                        if layer.name == "Index_AOI":
-                            layer.definitionQuery = "SECOORD = " + str(product.quad_id)
-                        elif layer.name == "US_States":
-                            layer.definitionQuery = "STATE_NAME = '" + str(state_name) + "'"
-                            sql_querry = "STATE_NAME = '" + str(state_name) + "'"
-                            arcpy.AddMessage(sql_querry)
-                            arcpy.SelectLayerByAttribute_management(layer, "NEW_SELECTION", sql_querry)
-                            boundaries_data_frame.zoomToSelectedFeatures()
-                            arcpy.SelectLayerByAttribute_management(layer, "CLEAR_SELECTION")
-                            break
-                    del layers
-                    arcpy.AddMessage("Updating the Boundaries Data Frame...")
+                # Updating the Surround Elements
+                
+                MapGenerator.updateLayoutElements(self, layout_elements, map_name, state_name, product.mapSheetName, map_series, map_edition, map_sheet)
 
                 arcpy.RefreshActiveView()
                 arcpy.RefreshTOC()
@@ -539,13 +553,16 @@ class MapGenerator(object):
                 # Export the Map to the selected format
                 file_name = Utilities.export_map_document(product_location, final_mxd,
                                                           map_doc_name, data_frame,
-                                                          self.outputdirectory, product.exporter)
+                                                          self.outputdirectory, product.exporter, product.productionPDFXML)
                 parameters[1].value = file_name
+                
+                arcpy.AddMessage("Cleaning up all the intermediate data.")
 
                 # Delete feature dataset created for grid (Option for Development)
-                #arcpy.Delete_management(gfds)
-
-                del final_mxd, grid
+                arcpy.Delete_management(gfds)
+                del final_mxd, grid, custom_aoi_layer, custom_aoi_lyr
+                arcpy.Delete_management(final_mxd_path)
+                rst = arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
 
             return
 
@@ -556,12 +573,229 @@ class MapGenerator(object):
         except Exception as ex:
             arcpy.AddError("Unexpected Error: " + ex.message)
 
+
+
+class DesktopGateway(object):
+    """ Class that contains the code to generate a new map based off the input aoi"""
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Map Generation"
+        self.description = "Python Script used to call the Map Generator script on ArcMap or WMX."
+        self.canRunInBackground = False
+
+        #Path to the AGS Output Directory
+        self.outputdirectory = Utilities.output_directory
+        # Path to MCS_POD's Product Location
+        self.shared_prod_path = Utilities.shared_products_path
+
+    def getParameterInfo(self):
+        """Define parameter definitions"""
+        map_aoi = arcpy.Parameter(name="map_aoi",
+                                  displayName="Map AOI",
+                                  direction="Input",
+                                  datatype="GPFeatureLayer",
+                                  parameterType="Required")
+    
+        map_name_field = arcpy.Parameter(name = "map_name_field",
+                                         displayName = "Map Name Field",
+                                         direction = "Input",
+                                         datatype="Field",
+                                         parameterType="Required")
+
+        map_template = arcpy.Parameter(name="map_template",
+                                       displayName="Map Document Template",
+                                       direction="Input",
+                                       datatype="DEMapDocument",
+                                       parameterType="Required")
+        
+        grid_xml = arcpy.Parameter(name="grid_xml", 
+                                   displayName="Grid and Graticules XML",
+                                   direction="Input",
+                                   datatype="DEFile",
+                                   parameterType="Required")        
+        
+        export_type = arcpy.Parameter(name="export_type", 
+                                      displayName="Export Type", 
+                                      direction="Input", 
+                                      datatype="GPString", 
+                                      parameterType="Required")
+        
+        working_directory = arcpy.Parameter(name= "working_directory",
+                                            displayName= "Working Directory",
+                                            direction= "Input",
+                                            datatype="DEFolder",
+                                            parameterType= "Required")
+        
+        production_workspace = arcpy.Parameter(name= "production_workspace",
+                                               displayName= "Production Workspace",
+                                               direction= "Input",
+                                               datatype= "DEWorkspace", 
+                                               parameterType="Optional")
+        
+        production_pdf_xml = arcpy.Parameter(name="production_pdf_xml", 
+                                   displayName="Production PDF XML",
+                                   direction="Input",
+                                   datatype="DEFile",
+                                   parameterType="Optional")           
+        
+        output_file = arcpy.Parameter(name="output_file",
+                              displayName="Output File",
+                              direction="Output",
+                              datatype="GPString",
+                              parameterType="Derived")
+
+        grid_xml.filter.list = ["xml"]
+        export_type.filter.type = "ValueList"
+        export_type.filter.list = ["PDF", "TIFF", "JPEG", "Multi-page PDF", "Production PDF", "Layout GeoTIFF", "Map Package"]
+        production_pdf_xml.filter.list = ["xml"]
+        map_name_field.parameterDependencies = [map_aoi.name]
+        map_name_field.filter.list = ["Text", "Short", "Long", "Double"]
+        map_aoi.filter.list = ["Polygon"]
+
+        params = [map_aoi, map_name_field, map_template, grid_xml, export_type, working_directory, production_pdf_xml, production_workspace, output_file]
+
+        # Default Values for Debugging
+        #map_aoi.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\SaltLakeCity.gdb\SLC_AOIs"
+        #map_name_field.value = "QUAD_NAME"
+        #map_template.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM25KTemplate.mxd"
+        #grid_xml.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM_UTM_WGS84_grid.xml"
+        #export_type.value = "Multi-page PDF"
+        #export_type.value = "PDF"
+        #working_directory.value = r"C:\arcgisserver\MCS_POD\WMX\Test_Working_Dir"
+        #production_workspace.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\SaltLakeCity.gdb"
+        #production_pdf_xml.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\CTM_Production_PDF.xml"
+        return params
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        if arcpy.CheckExtension("foundation") == "Available":
+            return True
+        return False
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""  
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""  
+        # Checks to see if the Map AOI parameter has changed
+        if parameters[0].altered == True:
+            # Gets the Feature count
+            feature_count = arcpy.GetCount_management(parameters[0].value)
+            # Returns a warning if the AOI Layer has more than 25 features.
+            if int(feature_count.getOutput(0)) > 25:
+                parameters[0].setWarningMessage("The Map AOI layer has more than 25 features, process might be slow.  The AOI Layer has: " + str(feature_count.getOutput(0)) + " features.")
+        elif parameters[4].altered == True:
+            if parameters[4].value <> "Production PDF":
+                parameters[6].enabled = False
+            elif parameters[4].value == "Production PDF":
+                parameters[6].enabled = True
+                xml_value = parameters[6].value
+                if not xml_value:
+                    parameters[6].setErrorMessage("If Production PDF Exporter is choosen, you must input a Production PDF XML color mapping file.")
+          
+        return        
+
+    def execute(self, parameters, messages):
+        try:
+            # Getting the input parameters
+            map_aoi = parameters[0].value
+            map_name_field = parameters[1].value
+            map_template_file = parameters[2].value
+            grid_xml_file = parameters[3].value
+            export_type = parameters[4].value
+            working_directory = parameters[5].value
+            production_workspace = parameters[7].value
+            production_pdf_xml = parameters[6].value
+
+            multi_page_pdf_list = []
+            output_files = []
+            
+            if parameters[4].value == "Production PDF":
+                if not parameters[6].value:
+                    arcpy.AddError("If Production PDF Exporter is choosen, a Production PDF color mapping XML file must be provided.")
+                    exit(0)
+            
+            # Getting output location from Utilities
+            if working_directory == "":
+                output_location = Utilities.output_directory
+            else: 
+                output_location = str(working_directory)
+            
+            # Starting a Seach Cursor to loop through the AOI Layer
+            with arcpy.da.SearchCursor(map_aoi, ['SHAPE@JSON', str(map_name_field), 'OID@']) as scur:
+                for row in scur:
+                    map_name = None
+                    # Getting the Map name from the AOI Layer or setting a Default Name
+                    if row[1] == '':
+                        arcpy.AddWarning("Map name is NULL, map name will be based on the GFID for the AOI Feature.")
+                        map_name = "GFID_" + row[2]
+                    else:
+                        map_name = row[1]
+                    # Getting the parent dirctory and file names for the template files
+                    direcotry = os.path.dirname(str(map_template_file))
+                    product_name = os.path.basename(direcotry)
+                    # Creating the JSON Sting
+                    input_json = json.dumps({'productName': product_name, 'mxd': str(map_template_file), 'gridXml': str(grid_xml_file), 'exporter': str(export_type), 'exportOption': 'Export', 'geometry': json.loads(row[0]), 'quad_id': str(row[2]), 'mapSheetName': map_name, 'customName': '', 'workingDirectory': str(working_directory), 'productionWorkspace': str(production_workspace), 'productionPDFXML': str(production_pdf_xml)}, sort_keys=True, separators=(',', ': '))
+                    print input_json
+                    
+                    # Calls the Map Generation locgic
+                    arcpy.AddMessage("Call the Map Generation tool for the: " + map_name + " AOI.")
+                    mp_generator = MapGenerator()
+                    par = mp_generator.getParameterInfo()
+                    par[0].value = input_json
+                    mp_generator.execute(par, None)
+                    outfile = os.path.join(output_location, par[1].value)
+                    
+                    # Creates the array for the list of output(s)
+                    if export_type == "Multi-page PDF":
+                        multi_page_pdf_list.append(outfile)
+                    else:
+                        output_files.append(outfile)
+                
+                # Creates a Map Book for the multi-page PDFs
+                map_book_name = ""
+                if multi_page_pdf_list != []:
+                    map_book_name = "_ags_MultipagePDF_" + str(Utilities.get_date_time()) + ".pdf"
+                    map_book_path = os.path.join(output_location, map_book_name)
+    
+                    # Create the file and append pages
+                    pdfdoc = arcpy.mapping.PDFDocumentCreate(map_book_path)
+
+                    # Loops through each single page PDF and adds them together in 1 Mutli-page PDF
+                    for pdf_name in multi_page_pdf_list:
+                        pdf_path = os.path.join(output_location, pdf_name)
+                        pdfdoc.appendPages(pdf_path)
+    
+                    pdfdoc.saveAndClose()
+                    output_files.append(os.path.join(output_location, map_book_name))
+    
+                    arcpy.AddMessage("Output Files: " + json.dumps(output_files))                   
+                        
+                        
+                arcpy.SetParameterAsText(8, output_files)
+            return
+
+        except arcpy.ExecuteError:
+            arcpy.AddError(arcpy.GetMessages(2))
+        except SystemError:
+            arcpy.AddError("System Error: " + sys.exc_info()[0])
+        except Exception as ex:
+            arcpy.AddError("Unexpected Error: " + ex.message)
+
+
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = MapGenerator()
+    #g = DesktopGateway()
+    ##g = MapGenerator()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
 #if __name__ == '__main__':
     #main()
+
