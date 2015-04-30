@@ -478,6 +478,7 @@ class MapGenerator(object):
                 # Updating the Boundaries Data Frame
                 arcpy.AddMessage(str(boundaries_data_frame.spatialReference))
                 boundaries_data_frame.spatialReference = grid.baseSpatialReference
+                #boundaries_data_frame.rotation = data_frame.rotation
                 layers = arcpy.mapping.ListLayers(final_mxd, "", boundaries_data_frame)
                 index_aoi = None
                 us_states = None
@@ -560,7 +561,7 @@ class MapGenerator(object):
                 arcpy.Delete_management(gfds)
                 del final_mxd, grid, custom_aoi_layer, custom_aoi_lyr
                 arcpy.Delete_management(final_mxd_path)
-                rst = arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
+                arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
 
             return
 
@@ -659,7 +660,7 @@ class DesktopGateway(object):
         #map_template.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM25KTemplate.mxd"
         #grid_xml.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM_UTM_WGS84_grid.xml"
         #export_type.value = "Multi-page PDF"
-        #export_type.value = "PDF"
+        ##export_type.value = "PDF"
         #working_directory.value = r"C:\arcgisserver\MCS_POD\WMX\Test_Working_Dir"
         #production_workspace.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\SaltLakeCity.gdb"
         #production_pdf_xml.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\CTM_Production_PDF.xml"
@@ -755,27 +756,30 @@ class DesktopGateway(object):
                     else:
                         output_files.append(outfile)
                 
-                # Creates a Map Book for the multi-page PDFs
-                map_book_name = ""
-                if multi_page_pdf_list != []:
-                    map_book_name = "_ags_MultipagePDF_" + str(Utilities.get_date_time()) + ".pdf"
-                    map_book_path = os.path.join(output_location, map_book_name)
-    
-                    # Create the file and append pages
-                    pdfdoc = arcpy.mapping.PDFDocumentCreate(map_book_path)
+            # Creates a Map Book for the multi-page PDFs
+            map_book_name = ""
+            if multi_page_pdf_list != []:
+                map_book_name = "_ags_MultipagePDF_" + str(Utilities.get_date_time()) + ".pdf"
+                map_book_path = os.path.join(output_location, map_book_name)
 
-                    # Loops through each single page PDF and adds them together in 1 Mutli-page PDF
-                    for pdf_name in multi_page_pdf_list:
-                        pdf_path = os.path.join(output_location, pdf_name)
-                        pdfdoc.appendPages(pdf_path)
-    
-                    pdfdoc.saveAndClose()
-                    output_files.append(os.path.join(output_location, map_book_name))
-    
-                    arcpy.AddMessage("Output Files: " + json.dumps(output_files))                   
-                        
-                        
-                arcpy.SetParameterAsText(8, output_files)
+                # Create the file and append pages
+                pdfdoc = arcpy.mapping.PDFDocumentCreate(map_book_path)
+
+                # Loops through each single page PDF and adds them together in 1 Mutli-page PDF
+                for pdf_name in multi_page_pdf_list:
+                    pdf_path = os.path.join(output_location, pdf_name)
+                    pdfdoc.appendPages(pdf_path)
+
+                pdfdoc.saveAndClose()
+                output_files.append(os.path.join(output_location, map_book_name))
+
+                arcpy.AddMessage("Output Files: " + json.dumps(output_files))
+                
+                for pdf in multi_page_pdf_list:
+                    arcpy.Delete_management(pdf)
+                    
+                    
+            arcpy.SetParameterAsText(8, output_files)
             return
 
         except arcpy.ExecuteError:
@@ -789,8 +793,8 @@ class DesktopGateway(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    ##g = DesktopGateway()
-    #g = MapGenerator()
+    #g = DesktopGateway()
+    ##g = MapGenerator()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
