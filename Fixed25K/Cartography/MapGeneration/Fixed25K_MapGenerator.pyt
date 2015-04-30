@@ -75,7 +75,7 @@ class MapGenerator(object):
                                       datatype="GPString",
                                       parameterType="Derived")
 
-        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed25K_MapGenerator.pyt","toolName":"MapGenerator","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453869.338275107,4938870.05400884],[-12453869.339388302,4957186.4929140275],[-12439954.400256153,4957186.4943807106],[-12439954.399142958,4938870.0554727865],[-12453869.338275107,4938870.05400884]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":3.5201989238640496e-006,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","quad_id":403011145,"mapSheetName":"Draper","customName":""}'
+        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed25K_MapGenerator.pyt","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_UTM_WGS84_grid.xml","pageMargin":"0","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453869.338275107,4938870.05400884],[-12453869.339388302,4957186.4929140275],[-12439954.400256153,4957186.4943807106],[-12439954.399142958,4938870.0554727865],[-12453869.338275107,4938870.05400884]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"scale":500000,"pageSize":"LETTER PORTRAIT","quad_id":403011145,"mapSheetName":"Draper","customName":"", "toolName":"MapGenerator", "productionPDFXML":"CTM_Production_PDF.xml"}'
         params = [product_as_json, output_file]
         return params
 
@@ -196,18 +196,8 @@ class MapGenerator(object):
 
             # Gets the mxd object
             final_mxd = arcpy.mapping.MapDocument(final_mxd_path)
-            
-            # Validates the job mxd does not have broken links
             layerlist = arcpy.mapping.ListLayers(final_mxd)
-            broken_layer = False
-            for layer in layerlist:
-                broken_layer = layer.isBroken
-                if broken_layer == True:
-                    arcpy.AddError("Map Document has boken data soruces.")
-                    exit(0)
-                
-            
-            
+
             # Updating the Data Sources to the Production Database if provided.
             if "productionWorkspace" in product.keys():
                 if product.productionWorkspace != "None":
@@ -217,6 +207,14 @@ class MapGenerator(object):
                         #arcpy.AddMessage("Replacing data source for layer: " + str(layer))
                         layer.replaceDataSource(production_database, "FILEGDB_WORKSPACE", "", True)
                     final_mxd.save()
+                    
+            # Validates the job mxd does not have broken links
+            broken_layer = False
+            for layer in layerlist:
+                broken_layer = layer.isBroken
+                if broken_layer == True:
+                    arcpy.AddError("Map Document has broken data sources.")
+                    exit(0)
             
             # Gets the largest data frame (page size not data frame extent)
             data_frame = Utilities.get_largest_data_frame(final_mxd)
@@ -549,7 +547,7 @@ class MapGenerator(object):
                 final_mxd.save()
 
                 arcpy.AddMessage("Finalizing the map document...")
-
+                
                 # Export the Map to the selected format
                 file_name = Utilities.export_map_document(product_location, final_mxd,
                                                           map_doc_name, data_frame,
@@ -791,8 +789,8 @@ class DesktopGateway(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = DesktopGateway()
-    ##g = MapGenerator()
+    ##g = DesktopGateway()
+    #g = MapGenerator()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
