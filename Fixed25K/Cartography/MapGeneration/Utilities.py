@@ -211,7 +211,7 @@ def convert_units(value, from_units, to_units):
 
 
 def export_map_document(product_location, mxd, map_doc_name, data_frame,
-                        outputdirectory, export_type, production_xml):
+                        outputdirectory, export_type, production_xml=None):
     """Exports MXD to chosen file type"""
 
     try:
@@ -339,6 +339,8 @@ def export_map_document(product_location, mxd, map_doc_name, data_frame,
         elif export == 'PRODUCTION PDF' or export == 'MULTI-PAGE PDF':
             filename = "_ags_" + map_doc_name  + ".pdf"
             outfile = os.path.join(outputdirectory, filename)
+            if production_xml == None:  
+                production_xml = "colormap.xml"
             setting_file = os.path.join(product_location, production_xml)
 
             if os.path.exists(setting_file) == True:
