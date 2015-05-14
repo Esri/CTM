@@ -575,10 +575,6 @@ class MapGenerator(object):
         except Exception as ex:
             arcpy.AddError("Unexpected Error: " + ex.message)
 
-
-
-<<<<<<< HEAD
-=======
 class DesktopGateway(object):
     """ Class that contains the code to generate a new map based off the input aoi"""
 
@@ -793,18 +789,15 @@ class DesktopGateway(object):
             arcpy.AddError("System Error: " + sys.exc_info()[0])
         except Exception as ex:
             arcpy.AddError("Unexpected Error: " + ex.message)
->>>>>>> Development
+
 
 
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-<<<<<<< HEAD
     #g = MapGenerator()
-=======
     #g = DesktopGateway()
     ##g = MapGenerator()
->>>>>>> Development
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
