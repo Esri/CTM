@@ -695,7 +695,7 @@ class DesktopGateway(object):
                 parameters[6].enabled = True
                 xml_value = parameters[6].value
                 if not xml_value:
-                    parameters[6].setErrorMessage("If Production PDF Exporter is choosen, you must input a Production PDF XML color mapping file.")
+                    parameters[6].setErrorMessage("If Production PDF Exporter is chosen, you must input a Production PDF XML color mapping file.")
           
         return        
 
