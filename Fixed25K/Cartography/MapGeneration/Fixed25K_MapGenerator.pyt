@@ -45,11 +45,7 @@ class Toolbox(object):
         self.label = "Fixed 25K Tools"
         self.alias = "fixed25kTools"
         # List of tool classes associated with this toolbox
-<<<<<<< HEAD
-        self.tools = [MapGenerator]
-=======
         self.tools = [MapGenerator, DesktopGateway]
->>>>>>> Development
 
 class MapGenerator(object):
     """ Class that contains the code to generate a new map based off the input aoi"""
