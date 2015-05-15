@@ -3,37 +3,36 @@ CTM
 
 Civilian Topographic Map (CTM)
 
-AT 10.3 Production Mapping contains a new Civilian Topographic Map (CTM) product that illustrates the full capabilities of Production Mapping. CTM includes a geodatabase data model as well as sample Production Mapping configuration files for editing, quality control, cartography, and generalization. 
+Civilian Topographic Map (CTM) is a product designed to allow users to easily create civilian style topographic data and maps using Esri Production Mapping.  CTM includes a geodatabase data model as well as sample configurations for editing, quality assurance, and cartography. CTM can also be configured as a sample map product for Product on Demand (POD), a web application that allows users to create high quality cartographic products through a light weight web interface.
 
-The schema of CTM is based on the National System for Geospatial Intelligence Feature Data dictionary (NFDD).   The NFDD is a comprehensive dictionary and coding scheme for feature types, feature attributes, and attribute values. The NFDD conforms to a subset of ISO 19126, Geographic information - Feature concept dictionaries and registers, and its information schema.  Esri has chosen a subset of NFDD feature types and attributes for CTM that are appropriate for those creating topographic maps in a civilian context.  
+The schema of CTM is based on the National System for Geospatial Intelligence Feature Data dictionary (NFDD).   The NFDD is a comprehensive dictionary and coding scheme for feature types, feature attributes, and attribute values. The NFDD conforms to a subset of ISO 19126, Geographic information - Feature concept dictionaries and registers, and its information schema.  Esri has chosen a subset of NFDD feature types and attributes for CTM that are appropriate for those doing topographic mapping in a civilian context.
 
-For more information about the NFDD specification visit - https://nsgreg.nga.mil/fdd/registers.jsp?register=NFDD.  On this page, you will see links that allow you to browse or search the NFDD specification for a complete list of feature and attribute types.  
+For more information about the NFDD specification visit: https://nsgreg.nga.mil/fdd/registers.jsp?register=NFDD. On this page you will see links that allow you to browse or search the NFDD specification for a complete list of feature and attribute types.  
 
-Features
+Contents
 ---
-  - Sample Geodatabase
-  - Template Map Document
-  - Style File
-  - Gird and Graticules XML
-  - Map Generator Python Toolbox 
-  - Product Library (contains the editing and cartographic specifications)
+  - Sample Data
+  - Editing Configurations Rules
+  - Data Quality Rules
+  - Cartogtraphic Configuraiton Rules
+  - Map Generator Python Tool
+  - Product Library
 
 Instructions
 ---
-  1.  Download the repro
-  2.  Open the Template Map Document
-  3.  Connect to the Product Library
-  4.  Explore the configuration and specification with the Product Library
-  5.  Use the Map Generator tool in the Python Toolbox to generate a new PDF
+  - See the Getting Started Civilian Topographic Map word document
 
 Requirements:
 ---
   1.  ArcGIS 10.3
-  2.  Esri Production Mapping
+  2.  Esri Production Mapping 10.3
   
+Issues
+---
+Find a bug or want to request a new feature? Please let us know by submitting an issue.
+
 Contributing
 ---
-
 Esri welcomes contributions from anyone and everyone. Please see our guidelines for contributing:  https://github.com/esri/contributing
 
 Licensing
