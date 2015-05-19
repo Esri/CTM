@@ -549,10 +549,18 @@ class MapGenerator(object):
 
                 arcpy.AddMessage("Finalizing the map document...")
                 
+                data_frame = arcpy.mapping.ListDataFrames(final_mxd, "Layers")[0]
+                
                 # Export the Map to the selected format
-                file_name = Utilities.export_map_document(product_location, final_mxd,
-                                                          map_doc_name, data_frame,
-                                                          self.outputdirectory, product.exporter, product.productionPDFXML)
+                if "productionPDFXML" in product.keys():
+                    file_name = Utilities.export_map_document(product_location, final_mxd,
+                                                              map_doc_name, data_frame,
+                                                              self.outputdirectory, product.exporter, product.productionPDFXML)
+                else:
+                    file_name = Utilities.export_map_document(product_location, final_mxd,
+                                                              map_doc_name, data_frame,
+                                                              self.outputdirectory, product.exporter)                 
+                parameters[1].value = file_name
                 parameters[1].value = file_name
                 
                 arcpy.AddMessage("Cleaning up all the intermediate data.")
