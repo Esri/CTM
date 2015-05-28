@@ -42,8 +42,8 @@ class Toolbox(object):
     """Toolbox classes, ArcMap needs this class."""
     def __init__(self):
         """Define the toolbox (the name of the toolbox is the name of the .pyt file)."""
-        self.label = "Fixed 25K Tools"
-        self.alias = "fixed25kTools"
+        self.label = "Fixed Tools"
+        self.alias = "fixedTools"
         # List of tool classes associated with this toolbox
         self.tools = [MapGenerator, DesktopGateway]
 
@@ -468,11 +468,10 @@ class MapGenerator(object):
                         arcpy.SelectLayerByAttribute_management(custom_aoi_lyr, "CLEAR_SELECTION")
                         sql_statement = "AOI_Name = '" + str(product.mapSheetName) + "'"
                         arcpy.SelectLayerByAttribute_management(custom_aoi_lyr, "NEW_SELECTION", sql_statement)
-                        adjoining_data_frame.extent = custom_aoi_lyr.getSelectedExtent()
-                        adjoining_data_frame.scale = 690000
+                        adjoining_data_frame.panToExtent(custom_aoi_lyr.getSelectedExtent())
                         arcpy.SelectLayerByAttribute_management(custom_aoi_lyr, "CLEAR_SELECTION")
                         break
-                arcpy.AddMessage("Updating the Adjoining Sheet Data Frame...")
+                arcpy.AddMessage("Updated the Adjoining Sheet Data Frame...")
                 del layers
 
                 # Updating the Boundaries Data Frame
@@ -667,8 +666,8 @@ class DesktopGateway(object):
         #map_name_field.value = "QUAD_NAME"
         #map_template.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM25KTemplate.mxd"
         #grid_xml.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM_UTM_WGS84_grid.xml"
-        #export_type.value = "Multi-page PDF"
-        ##export_type.value = "PDF"
+        #export_type.value = "LAYOUT GEOTIFF"
+        #export_type.value = "PDF"
         #working_directory.value = r"C:\arcgisserver\MCS_POD\WMX\Test_Working_Dir"
         #production_workspace.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\SaltLakeCity.gdb"
         #production_pdf_xml.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\CTM_Production_PDF.xml"
