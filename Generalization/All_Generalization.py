@@ -66,7 +66,7 @@ def main():
 
     start = datetime.datetime.now().replace(microsecond=0)
 
-    arcpy.PrepareData_CTM50KGeneralization(gen_workspace, scratch_workspace, product_library)
+    arcpy.PrepareData_CTM50KGeneralization(gen_workspace, scratch_workspace, product_library, aoi_fc)
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
