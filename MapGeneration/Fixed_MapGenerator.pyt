@@ -27,16 +27,16 @@ import shutil
 # MCS_POD's produce files be located in the ArcGIS Server Directory.
 # If this changes, the following 4 lines of code will be required to be
 # modified to point to the coorect arcgisserver\MCS_POD\Utilities location
-SCRIPTPATH = sys.path[0]
-PARENTDIRECTORY = os.path._abspath_split(SCRIPTPATH)
-if PARENTDIRECTORY[0] == False:
-    SCRIPTSDIRECTORY = os.path.join(PARENTDIRECTORY[1], r"\arcgisserver\MCS_POD\Utilities")
-elif PARENTDIRECTORY[0] == True:
-    SCRIPTSDIRECTORY = os.path.join(PARENTDIRECTORY[1], r"MCS_POD\Utilities")
-sys.path.append(SCRIPTSDIRECTORY)
+#SCRIPTPATH = sys.path[0]
+#PARENTDIRECTORY = os.path._abspath_split(SCRIPTPATH)
+#if PARENTDIRECTORY[0] == False:
+    #SCRIPTSDIRECTORY = os.path.join(PARENTDIRECTORY[1], r"\arcgisserver\MCS_POD\Utilities")
+#elif PARENTDIRECTORY[0] == True:
+    #SCRIPTSDIRECTORY = os.path.join(PARENTDIRECTORY[1], r"MCS_POD\Utilities")
+#sys.path.append(SCRIPTSDIRECTORY)
 import Utilities
 
-del SCRIPTPATH, PARENTDIRECTORY, SCRIPTSDIRECTORY
+#del SCRIPTPATH, PARENTDIRECTORY, SCRIPTSDIRECTORY
 
 class Toolbox(object):
     """Toolbox classes, ArcMap needs this class."""
