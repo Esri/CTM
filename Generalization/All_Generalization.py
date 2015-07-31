@@ -34,7 +34,7 @@ def main():
     tbx_path = os.path.dirname(__file__)
     tbx = tbx_path + '\\CTM50KGeneralization.tbx'
 
-    print(tbx)
+    arcpy.AddMessage("Toolbox path is: " + tbx)
 
     #import the toolbox
     arcpy.ImportToolbox(tbx)
@@ -49,7 +49,6 @@ def main():
 
     count = 0
 
-##    scratch_path = os.path.dirname(scratch_workspace)
     input_path = os.path.dirname(input_workspace)
 
     start_start = datetime.datetime.now().replace(microsecond=0)
@@ -63,19 +62,14 @@ def main():
     #Run the prepare script
     arcpy.AddMessage("Running Prepare Model")
 
-
     start = datetime.datetime.now().replace(microsecond=0)
-
+ 
     arcpy.PrepareData_CTM50KGeneralization(gen_workspace, scratch_workspace, product_library, aoi_fc)
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
-
-
+ 
     count = create_backup(backup, gen_workspace, 'PrepareData', count)
-
-
-
 
     #Run the transportation script
     arcpy.AddMessage("Running Transportation Model")
@@ -85,9 +79,9 @@ def main():
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
-
+ 
     count = create_backup(backup, gen_workspace, 'Transportation', count)
-
+ 
     #Run the buildings script
     arcpy.AddMessage("Running Building Model")
     start = datetime.datetime.now().replace(microsecond=0)
@@ -96,9 +90,9 @@ def main():
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
-
-    count = create_backup(backup, gen_workspace, 'Building', count)
-
+ 
+    count = create_backup(backup, gen_workspace, 'Building', count)  
+   
     #Run the hydro script
     arcpy.AddMessage("Running Hydrography Model")
     start = datetime.datetime.now().replace(microsecond=0)
