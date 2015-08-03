@@ -49,9 +49,16 @@ def export_map_document(product_location, mxd, map_doc_name, data_frame,
 
     try:
         export = export_type.upper()
+        product = arcpy.ProductInfo()
+        arcpy.AddMessage("Product: " + product)
+        
+        if product == 'ArcServer':
+            filename_prefixe = "_ags_"
+        else:
+            filename_prefixe = ""
 
         if export == "PDF":
-            filename = "_ags_" + map_doc_name  + ".pdf"
+            filename = filename_prefixe + map_doc_name  + ".pdf"
             outfile = os.path.join(outputdirectory, filename)
 
             # Export to PDF optional parameters
@@ -83,7 +90,7 @@ def export_map_document(product_location, mxd, map_doc_name, data_frame,
             return filename
 
         elif export == 'JPEG':
-            filename = "_ags_" + map_doc_name  + ".jpg"
+            filename = filename_prefixe + map_doc_name  + ".jpg"
             outfile = os.path.join(outputdirectory, filename)
 
             # Export to JEPG optional parameters
@@ -106,7 +113,7 @@ def export_map_document(product_location, mxd, map_doc_name, data_frame,
             return filename
 
         elif export == 'TIFF':
-            filename = "_ags_" + map_doc_name  + ".tif"
+            filename = filename_prefixe + map_doc_name  + ".tif"
             outfile = os.path.join(outputdirectory, filename)
 
             # Export to JPEG optional parameters
@@ -127,7 +134,7 @@ def export_map_document(product_location, mxd, map_doc_name, data_frame,
             return filename
 
         elif export == "MAP PACKAGE":
-            filename = "_ags_" + map_doc_name + ".mpk"
+            filename = filename_prefixe + map_doc_name + ".mpk"
             outfile = os.path.join(outputdirectory, filename)
             dfextent = data_frame.extent
             mxd = mxd.filePath
@@ -150,7 +157,7 @@ def export_map_document(product_location, mxd, map_doc_name, data_frame,
             return filename
 
         elif export == 'LAYOUT GEOTIFF':
-            filename = "_ags_" + map_doc_name  + ".tif"
+            filename = filename_prefixe + map_doc_name  + ".tif"
             outfile = os.path.join(outputdirectory, filename)
 
             # Export to Layout GeoTIFF optional parameters:
@@ -170,7 +177,7 @@ def export_map_document(product_location, mxd, map_doc_name, data_frame,
             return filename
 
         elif export == 'PRODUCTION PDF' or export == 'MULTI-PAGE PDF':
-            filename = "_ags_" + map_doc_name  + ".pdf"
+            filename = filename_prefixe + map_doc_name  + ".pdf"
             outfile = os.path.join(outputdirectory, filename)
             setting_file = os.path.join(product_location, production_xml)
 

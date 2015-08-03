@@ -75,7 +75,7 @@ class MapGenerator(object):
                                       datatype="GPString",
                                       parameterType="Derived")
 
-        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed25K_MapGenerator.pyt","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_UTM_WGS84_grid.xml","pageMargin":"0","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453869.338275107,4938870.05400884],[-12453869.339388302,4957186.4929140275],[-12439954.400256153,4957186.4943807106],[-12439954.399142958,4938870.0554727865],[-12453869.338275107,4938870.05400884]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"scale":500000,"pageSize":"LETTER PORTRAIT","quad_id":403011145,"mapSheetName":"Draper","customName":"", "toolName":"MapGenerator", "productionPDFXML":"CTM_Production_PDF.xml"}'
+        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_UTM_WGS84_grid.xml","pageMargin":"0","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453869.338275107,4938870.05400884],[-12453869.339388302,4957186.4929140275],[-12439954.400256153,4957186.4943807106],[-12439954.399142958,4938870.0554727865],[-12453869.338275107,4938870.05400884]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"scale":500000,"pageSize":"LETTER PORTRAIT","quad_id":403011145,"mapSheetName":"Draper","customName":"", "toolName":"MapGenerator", "productionPDFXML":"CTM_Production_PDF.xml"}'
         params = [product_as_json, output_file]
         return params
 
@@ -800,8 +800,8 @@ class DesktopGateway(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = DesktopGateway()
-    ##g = MapGenerator()
+    ##g = DesktopGateway()
+    #g = MapGenerator()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
