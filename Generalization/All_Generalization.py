@@ -74,7 +74,7 @@ def main():
     #Run the transportation script
     arcpy.AddMessage("Running Transportation Model")
     start = datetime.datetime.now().replace(microsecond=0)
-    arcpy.arcpy.Transportation_CTM50KGeneralization(gen_workspace, scratch_workspace)
+    arcpy.Transportation_CTM50KGeneralization(gen_workspace, scratch_workspace)
     arcpy.AddMessage(arcpy.GetMessages())
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
@@ -85,7 +85,7 @@ def main():
     #Run the buildings script
     arcpy.AddMessage("Running Building Model")
     start = datetime.datetime.now().replace(microsecond=0)
-    arcpy.arcpy.Buildings_CTM50KGeneralization(gen_workspace, scratch_workspace)
+    arcpy.Buildings_CTM50KGeneralization(gen_workspace, scratch_workspace)
     arcpy.AddMessage(arcpy.GetMessages())
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
@@ -96,7 +96,7 @@ def main():
     #Run the hydro script
     arcpy.AddMessage("Running Hydrography Model")
     start = datetime.datetime.now().replace(microsecond=0)
-    arcpy.arcpy.Hydro_CTM50KGeneralization(gen_workspace, scratch_workspace)
+    arcpy.Hydro_CTM50KGeneralization(gen_workspace, scratch_workspace)
     arcpy.AddMessage(arcpy.GetMessages())
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
@@ -119,7 +119,7 @@ def main():
     #Run the Elev script
     arcpy.AddMessage("Running Elevation Model")
     start = datetime.datetime.now().replace(microsecond=0)
-    arcpy.arcpy.Elev_CTM50KGeneralization(gen_workspace, scratch_workspace, 100, 500, aoi_fc)
+    arcpy.Elev_CTM50KGeneralization(gen_workspace, scratch_workspace, 100, 500, aoi_fc)
     arcpy.AddMessage(arcpy.GetMessages())
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
@@ -130,7 +130,7 @@ def main():
     #Run the Symbology script
     arcpy.AddMessage("Running Apply Symbology Model")
     start = datetime.datetime.now().replace(microsecond=0)
-    arcpy.arcpy.ApplySymbology_CTM50KGeneralization(gen_workspace, product_library)
+    arcpy.ApplySymbology_CTM50KGeneralization(gen_workspace, product_library)
     arcpy.AddMessage(arcpy.GetMessages())
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
@@ -141,7 +141,7 @@ def main():
     #Run the line conflicts script
     arcpy.AddMessage("Running Line Conflicts Model")
     start = datetime.datetime.now().replace(microsecond=0)
-    arcpy.arcpy.ResolveLine_CTM50KGeneralization(gen_workspace, scratch_workspace)
+    arcpy.ResolveLine_CTM50KGeneralization(gen_workspace, scratch_workspace)
     arcpy.AddMessage(arcpy.GetMessages())
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
@@ -152,7 +152,7 @@ def main():
     #Run the point conflicts script
     arcpy.AddMessage("Running Structure Conflicts Model")
     start = datetime.datetime.now().replace(microsecond=0)
-    arcpy.arcpy.ResolveStructure_CTM50KGeneralization(gen_workspace)
+    arcpy.ResolveStructure_CTM50KGeneralization(gen_workspace)
     arcpy.AddMessage(arcpy.GetMessages())
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
@@ -160,17 +160,25 @@ def main():
 
     count = create_backup(backup, gen_workspace, 'ResolveStructure', count)
 
-
     #Run the hydro conflicts script
     arcpy.AddMessage("Running Hydro Conflicts Model")
     start = datetime.datetime.now().replace(microsecond=0)
-    arcpy.arcpy.ResolveHydro_CTM50KGeneralization(gen_workspace, scratch_workspace)
+    arcpy.ResolveHydro_CTM50KGeneralization(gen_workspace, scratch_workspace)
     arcpy.AddMessage(arcpy.GetMessages())
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
 
     count = create_backup(backup, gen_workspace, 'ResolveHydro', count)
+    
+    #Clean up the final database
+    if arcpy.Exists(os.path.join(gen_workspace, "AOI_Boundary_line")) == True:
+        arcpy.Delete_management(os.path.join(gen_workspace, "AOI_Boundary_line"))
+    if arcpy.Exists(os.path.join(gen_workspace, "bridge_wing_conflicts")) == True:
+        arcpy.Delete_management(os.path.join(gen_workspace, "bridge_wing_conflicts"))
+    if arcpy.Exists(os.path.join(gen_workspace, "Partition")) == True:
+        arcpy.Delete_management(os.path.join(gen_workspace, "Partition"))
+
 
     end_end = datetime.datetime.now().replace(microsecond=0)
 
