@@ -22,21 +22,7 @@ import os
 import sys
 import json
 import shutil
-
-# The current design of the Python Files for MCS_POD require that
-# MCS_POD's produce files be located in the ArcGIS Server Directory.
-# If this changes, the following 4 lines of code will be required to be
-# modified to point to the coorect arcgisserver\MCS_POD\Utilities location
-#SCRIPTPATH = sys.path[0]
-#PARENTDIRECTORY = os.path._abspath_split(SCRIPTPATH)
-#if PARENTDIRECTORY[0] == False:
-    #SCRIPTSDIRECTORY = os.path.join(PARENTDIRECTORY[1], r"\arcgisserver\MCS_POD\Utilities")
-#elif PARENTDIRECTORY[0] == True:
-    #SCRIPTSDIRECTORY = os.path.join(PARENTDIRECTORY[1], r"MCS_POD\Utilities")
-#sys.path.append(SCRIPTSDIRECTORY)
-import Utilities
-
-#del SCRIPTPATH, PARENTDIRECTORY, SCRIPTSDIRECTORY
+import CTM_Utilities
 
 class Toolbox(object):
     """Toolbox classes, ArcMap needs this class."""
@@ -57,9 +43,9 @@ class MapGenerator(object):
         self.canRunInBackground = False
 
         #Path to the AGS Output Directory
-        self.outputdirectory = Utilities.output_directory
+        self.outputdirectory = CTM_Utilities.output_directory
         # Path to MCS_POD's Product Location
-        self.shared_prod_path = Utilities.shared_products_path
+        self.shared_prod_path = CTM_Utilities.shared_products_path
 
     def getParameterInfo(self):
         """Define parameter definitions"""
@@ -128,7 +114,7 @@ class MapGenerator(object):
             arcpy.env.overwriteOutput = True
 
             #Getting the Data and time
-            timestamp = Utilities.get_date_time()
+            timestamp = CTM_Utilities.get_date_time()
 
             #Paths to the ArcGIS Scratch workspaces
             scratch_workspace = arcpy.env.scratchGDB
@@ -140,7 +126,7 @@ class MapGenerator(object):
             # Gets the inputs and converts to a Python Object
             product_json = parameters[0].value
             product = json.loads(product_json)
-            product = Utilities.DictToObject(product)
+            product = CTM_Utilities.DictToObject(product)
             
             # Setting a working directory
             if "workingDirectory" in product.keys():
@@ -217,7 +203,7 @@ class MapGenerator(object):
                     exit(0)
             
             # Gets the largest data frame (page size not data frame extent)
-            data_frame = Utilities.get_largest_data_frame(final_mxd)
+            data_frame = CTM_Utilities.get_largest_data_frame(final_mxd)
 
             # Code to generate a Preview for the POD wed app
             if product.exportOption == 'Preview':
@@ -552,11 +538,11 @@ class MapGenerator(object):
                 
                 # Export the Map to the selected format
                 if "productionPDFXML" in product.keys():
-                    file_name = Utilities.export_map_document(product_location, final_mxd,
+                    file_name = CTM_Utilities.export_map_document(product_location, final_mxd,
                                                               map_doc_name, data_frame,
                                                               self.outputdirectory, product.exporter, product.productionPDFXML)
                 else:
-                    file_name = Utilities.export_map_document(product_location, final_mxd,
+                    file_name = CTM_Utilities.export_map_document(product_location, final_mxd,
                                                               map_doc_name, data_frame,
                                                               self.outputdirectory, product.exporter)                 
                 parameters[1].value = file_name
@@ -591,9 +577,9 @@ class DesktopGateway(object):
         self.canRunInBackground = False
 
         #Path to the AGS Output Directory
-        self.outputdirectory = Utilities.output_directory
+        self.outputdirectory = CTM_Utilities.output_directory
         # Path to MCS_POD's Product Location
-        self.shared_prod_path = Utilities.shared_products_path
+        self.shared_prod_path = CTM_Utilities.shared_products_path
 
     def getParameterInfo(self):
         """Define parameter definitions"""
@@ -726,9 +712,9 @@ class DesktopGateway(object):
                     arcpy.AddError("If Production PDF Exporter is choosen, a Production PDF color mapping XML file must be provided.")
                     exit(0)
             
-            # Getting output location from Utilities
+            # Getting output location from CTM_Utilities
             if working_directory == "":
-                output_location = Utilities.output_directory
+                output_location = CTM_Utilities.output_directory
             else: 
                 output_location = str(working_directory)
             
@@ -766,7 +752,7 @@ class DesktopGateway(object):
             # Creates a Map Book for the multi-page PDFs
             map_book_name = ""
             if multi_page_pdf_list != []:
-                map_book_name = "_ags_MultipagePDF_" + str(Utilities.get_date_time()) + ".pdf"
+                map_book_name = "_ags_MultipagePDF_" + str(CTM_Utilities.get_date_time()) + ".pdf"
                 map_book_path = os.path.join(output_location, map_book_name)
 
                 # Create the file and append pages
