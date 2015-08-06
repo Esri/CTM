@@ -688,7 +688,7 @@ class DesktopGateway(object):
                 parameters[6].enabled = True
                 xml_value = parameters[6].value
                 if not xml_value:
-                    parameters[6].setErrorMessage("If Production PDF Exporter is chosen, you must input a Production PDF XML color mapping file.")
+                    parameters[6].setErrorMessage("If Production PDF Exporter is chosen, a Production PDF color mapping XML file must be provided.")
           
         return        
 
@@ -709,7 +709,7 @@ class DesktopGateway(object):
             
             if parameters[4].value == "Production PDF":
                 if not parameters[6].value:
-                    arcpy.AddError("If Production PDF Exporter is choosen, a Production PDF color mapping XML file must be provided.")
+                    arcpy.AddError("If Production PDF Exporter is chosen, a Production PDF color mapping XML file must be provided.")
                     exit(0)
             
             # Getting output location from CTM_Utilities
