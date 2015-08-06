@@ -749,10 +749,11 @@ class DesktopGateway(object):
                     else:
                         output_files.append(outfile)
                 
-            # Creates a Map Book for the multi-page PDFs
+            # Creates a Map Book for the multi-page PDFs    
+
             map_book_name = ""
             if multi_page_pdf_list != []:
-                map_book_name = "_ags_MultipagePDF_" + str(CTM_Utilities.get_date_time()) + ".pdf"
+                map_book_name = "MultipagePDF_" + str(CTM_Utilities.get_date_time()) + ".pdf"
                 map_book_path = os.path.join(output_location, map_book_name)
 
                 # Create the file and append pages
