@@ -533,7 +533,6 @@ class MapGenerator(object):
                 final_mxd.save()
 
                 arcpy.AddMessage("Finalizing the map document...")
-                
                 data_frame = arcpy.mapping.ListDataFrames(final_mxd, "Layers")[0]
                 
                 # Export the Map to the selected format
@@ -548,13 +547,15 @@ class MapGenerator(object):
                 parameters[1].value = file_name
                 parameters[1].value = file_name
                 
-                arcpy.AddMessage("Cleaning up all the intermediate data.")
+                arcpy.AddMessage("Keep mxd value is " + str(product.keep_mxd_backup))
 
                 # Delete feature dataset created for grid (Option for Development)
-                arcpy.Delete_management(gfds)
-                del final_mxd, grid, custom_aoi_layer, custom_aoi_lyr
-                arcpy.Delete_management(final_mxd_path)
-                arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
+                if product.keep_mxd_backup == False:
+                    arcpy.AddMessage("Cleaning up all the intermediate data.")
+                    arcpy.Delete_management(gfds)
+                    del final_mxd, grid, custom_aoi_layer, custom_aoi_lyr
+                    arcpy.Delete_management(final_mxd_path)
+                    arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
 
             return
 
@@ -629,7 +630,13 @@ class DesktopGateway(object):
                                    displayName="Production PDF XML",
                                    direction="Input",
                                    datatype="DEFile",
-                                   parameterType="Optional")           
+                                   parameterType="Optional")
+        
+        keep_mxd = arcpy.Parameter(name ="keep_mxd",
+                                   displayName = "Keep Output MXD",
+                                   direction="Input",
+                                   datatype="GPBoolean",
+                                   parameterType="Optional")
         
         output_file = arcpy.Parameter(name="output_file",
                               displayName="Output File",
@@ -645,7 +652,7 @@ class DesktopGateway(object):
         map_name_field.filter.list = ["Text", "Short", "Long", "Double"]
         map_aoi.filter.list = ["Polygon"]
 
-        params = [map_aoi, map_name_field, map_template, grid_xml, export_type, working_directory, production_pdf_xml, production_workspace, output_file]
+        params = [map_aoi, map_name_field, map_template, grid_xml, export_type, working_directory, production_pdf_xml, production_workspace, keep_mxd, output_file]
 
         # Default Values for Debugging
         #map_aoi.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\SaltLakeCity.gdb\SLC_AOIs"
@@ -657,6 +664,7 @@ class DesktopGateway(object):
         #working_directory.value = r"C:\arcgisserver\MCS_POD\WMX\Test_Working_Dir"
         #production_workspace.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\SaltLakeCity.gdb"
         #production_pdf_xml.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\CTM_Production_PDF.xml"
+        #keep_mxd.value = False
         return params
 
     def isLicensed(self):
@@ -703,6 +711,9 @@ class DesktopGateway(object):
             working_directory = parameters[5].value
             production_workspace = parameters[7].value
             production_pdf_xml = parameters[6].value
+            keep_mxd = parameters[8].value
+            arcpy.AddMessage("Keep MXD Value is: " + str(keep_mxd))
+            
 
             multi_page_pdf_list = []
             output_files = []
@@ -732,7 +743,7 @@ class DesktopGateway(object):
                     direcotry = os.path.dirname(str(map_template_file))
                     product_name = os.path.basename(direcotry)
                     # Creating the JSON Sting
-                    input_json = json.dumps({'productName': product_name, 'mxd': str(map_template_file), 'gridXml': str(grid_xml_file), 'exporter': str(export_type), 'exportOption': 'Export', 'geometry': json.loads(row[0]), 'quad_id': str(row[2]), 'mapSheetName': map_name, 'customName': '', 'workingDirectory': str(working_directory), 'productionWorkspace': str(production_workspace), 'productionPDFXML': str(production_pdf_xml)}, sort_keys=True, separators=(',', ': '))
+                    input_json = json.dumps({'productName': product_name, 'mxd': str(map_template_file), 'gridXml': str(grid_xml_file), 'exporter': str(export_type), 'exportOption': 'Export', 'geometry': json.loads(row[0]), 'quad_id': str(row[2]), 'mapSheetName': map_name, 'customName': '', 'workingDirectory': str(working_directory), 'productionWorkspace': str(production_workspace), 'productionPDFXML': str(production_pdf_xml), 'keep_mxd_backup': keep_mxd}, sort_keys=True, separators=(',', ': '))
                     print input_json
                     
                     # Calls the Map Generation locgic
@@ -773,7 +784,7 @@ class DesktopGateway(object):
                     arcpy.Delete_management(pdf)
                     
                     
-            arcpy.SetParameterAsText(8, output_files)
+            arcpy.SetParameterAsText(9, output_files)
             return
 
         except arcpy.ExecuteError:
@@ -787,8 +798,8 @@ class DesktopGateway(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    ##g = DesktopGateway()
-    #g = MapGenerator()
+    #g = DesktopGateway()
+    ##g = MapGenerator()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
