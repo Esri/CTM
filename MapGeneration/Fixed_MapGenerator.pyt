@@ -677,6 +677,20 @@ class DesktopGateway(object):
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""  
+        #if parameters[0].altered == True:
+            ## Gets the Feature count
+            #feature_count = arcpy.GetCount_management(parameters[0].value)
+            ## Returns a warning if the AOI Layer has more than 25 features.
+            #if int(feature_count.getOutput(0)) > 25:
+                #parameters[0].setWarningMessage("The Map AOI layer has more than 25 features, process might be slow.  The AOI Layer has: " + str(feature_count.getOutput(0)) + " features.")        
+        if parameters[4].altered == True:
+            if parameters[4].value <> "Production PDF":
+                parameters[6].enabled = False
+            elif parameters[4].value == "Production PDF":
+                parameters[6].enabled = True
+                xml_value = parameters[6].value
+                if not xml_value:
+                    parameters[6].setErrorMessage("If Production PDF Exporter is chosen, a Production PDF color mapping XML file must be provided.")
         return
 
     def updateMessages(self, parameters):
@@ -689,15 +703,6 @@ class DesktopGateway(object):
             # Returns a warning if the AOI Layer has more than 25 features.
             if int(feature_count.getOutput(0)) > 25:
                 parameters[0].setWarningMessage("The Map AOI layer has more than 25 features, process might be slow.  The AOI Layer has: " + str(feature_count.getOutput(0)) + " features.")
-        elif parameters[4].altered == True:
-            if parameters[4].value <> "Production PDF":
-                parameters[6].enabled = False
-            elif parameters[4].value == "Production PDF":
-                parameters[6].enabled = True
-                xml_value = parameters[6].value
-                if not xml_value:
-                    parameters[6].setErrorMessage("If Production PDF Exporter is chosen, a Production PDF color mapping XML file must be provided.")
-          
         return        
 
     def execute(self, parameters, messages):
@@ -714,7 +719,6 @@ class DesktopGateway(object):
             keep_mxd = parameters[8].value
             arcpy.AddMessage("Keep MXD Value is: " + str(keep_mxd))
             
-
             multi_page_pdf_list = []
             output_files = []
             
@@ -797,12 +801,12 @@ class DesktopGateway(object):
 
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
-#def main():
-    #g = DesktopGateway()
-    ##g = MapGenerator()
-    #par = g.getParameterInfo()
-    #g.execute(par, None)
+def main():
+    g = DesktopGateway()
+    #g = MapGenerator()
+    par = g.getParameterInfo()
+    g.execute(par, None)
 
-#if __name__ == '__main__':
-    #main()
+if __name__ == '__main__':
+    main()
 
