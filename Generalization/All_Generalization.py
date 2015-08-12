@@ -17,10 +17,10 @@ scratch_workspace = arcpy.GetParameterAsText(2)
 scratch_path = os.path.dirname(scratch_workspace)
 
 
-def create_backup(backup, gen_workspace, model, count):
+def create_backup(backup, gen_workspace, output_folder, model, count):
     if backup == 'true':
         arcpy.AddMessage("Creating Backup")
-        out = scratch_path + '\\after_' + str(count) + '_' + model + '.gdb'
+        out = output_folder + '\\after_' + str(count) + '_' + model + '.gdb'
         arcpy.Copy_management(gen_workspace, out)
     count += 1
     return count
@@ -28,6 +28,18 @@ def create_backup(backup, gen_workspace, model, count):
 def main():
 
     arcpy.env.overwriteOutput = True
+    
+    if arcpy.CheckExtension("Spatial") == "Available":
+        arcpy.CheckOutExtension("Spatial")
+    else:
+        arcpy.AddError("The Spatial Analyst Extension is not available.")
+        raise arcpy.ExecuteError
+    
+    if arcpy.CheckExtension("foundation") == "Available":
+        arcpy.CheckOutExtension("foundation")
+    else:
+        arcpy.AddError("The Production Mapping Extension is not available.")
+        raise arcpy.ExecuteError    
 
 
     #get the path of the script being run to determine path of toolbox
@@ -41,23 +53,40 @@ def main():
 
     #get the inputs
     input_workspace = arcpy.GetParameterAsText(0)
-    output_name = arcpy.GetParameterAsText(1)
-    scratch_workspace = arcpy.GetParameterAsText(2)
-    product_library = arcpy.GetParameterAsText(3)
-    aoi_fc = arcpy.GetParameterAsText(4)
+    aoi_fc = arcpy.GetParameterAsText(1)
+    output_folder = arcpy.GetParameterAsText(2)
+    output_name = arcpy.GetParameterAsText(3)
+    product_library = arcpy.GetParameterAsText(4)
     backup = arcpy.GetParameterAsText(5)
+    #scratch_workspace = arcpy.GetParameterAsText(6)
+    
+    #input_workspace = r"C:\arcgisserver\MCS_POD\Products\Fixed 50K\SaltLakeCity.gdb"
+    #aoi_fc = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\Personal_Test_Data_25K.gdb\Custom_50K_AOI"
+    #output_folder = r"C:\Temp"
+    #output_name = "CTM_50K_Gen"
+    #product_library = r"C:\arcgisserver\MCS_POD\Products\CTM_ProductLibrary\CTM_Product_Library.gdb"
+    #backup = True
+    #scratch_workspace = r"C:\Temp\Scratch.gdb"
+    
+    #if scratch_workspace == "":
+        #scratch_workspace = arcpy.env.scratchGDB
+        #arcpy.AddMessage("Scratch Workspace is: " + scratch_workspace)
+    #else:
+        #arcpy.AddMessage("Scratch Workspace is: " + scratch_workspace)
 
     count = 0
 
-    input_path = os.path.dirname(input_workspace)
+    #input_path = os.path.dirname(input_workspace)
 
     start_start = datetime.datetime.now().replace(microsecond=0)
 
     #create the output database
     arcpy.AddMessage("Creating generalization database")
-    gen_workspace = input_path + '\\' + output_name + '.gdb'
+    gen_workspace = output_folder + '\\' + output_name + '.gdb'
     arcpy.Copy_management(input_workspace, gen_workspace)
-
+    
+    #Creating the Scratch workspace
+    scratch_workspace = arcpy.CreateFileGDB_management(output_folder, "Scratch")
 
     #Run the prepare script
     arcpy.AddMessage("Running Prepare Model")
@@ -69,7 +98,7 @@ def main():
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
  
-    count = create_backup(backup, gen_workspace, 'PrepareData', count)
+    count = create_backup(backup, gen_workspace, output_folder, 'PrepareData', count)
 
     #Run the transportation script
     arcpy.AddMessage("Running Transportation Model")
@@ -80,7 +109,7 @@ def main():
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
  
-    count = create_backup(backup, gen_workspace, 'Transportation', count)
+    count = create_backup(backup, gen_workspace, output_folder, 'Transportation', count)    
  
     #Run the buildings script
     arcpy.AddMessage("Running Building Model")
@@ -91,7 +120,7 @@ def main():
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
  
-    count = create_backup(backup, gen_workspace, 'Building', count)  
+    count = create_backup(backup, gen_workspace, output_folder, 'Building', count)   
    
     #Run the hydro script
     arcpy.AddMessage("Running Hydrography Model")
@@ -102,8 +131,8 @@ def main():
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
 
-    count = create_backup(backup, gen_workspace, 'Hydro', count)
-
+    count = create_backup(backup, gen_workspace, output_folder, 'Hydro', count)
+    
     #Run the Land Cover script
     arcpy.AddMessage("Running Land Cover Model")
     start = datetime.datetime.now().replace(microsecond=0)
@@ -113,19 +142,18 @@ def main():
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
 
-    count = create_backup(backup, gen_workspace, 'LandCov', count)
-
+    count = create_backup(backup, gen_workspace, output_folder, 'LandCov', count)    
 
     #Run the Elev script
     arcpy.AddMessage("Running Elevation Model")
     start = datetime.datetime.now().replace(microsecond=0)
-    arcpy.Elev_CTM50KGeneralization(gen_workspace, scratch_workspace, 100, 500, aoi_fc)
+    arcpy.Elev_CTM50KGeneralization(gen_workspace, scratch_workspace, 100, 500)
     arcpy.AddMessage(arcpy.GetMessages())
     end = datetime.datetime.now().replace(microsecond=0)
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
 
-    count = create_backup(backup, gen_workspace, 'Elev', count)
+    count = create_backup(backup, gen_workspace, output_folder, 'Elev', count)  
 
     #Run the Symbology script
     arcpy.AddMessage("Running Apply Symbology Model")
@@ -136,7 +164,7 @@ def main():
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
 
-    count = create_backup(backup, gen_workspace, 'Symbology', count)
+    count = create_backup(backup, gen_workspace, output_folder, 'Symbology', count)  
 
     #Run the line conflicts script
     arcpy.AddMessage("Running Line Conflicts Model")
@@ -147,7 +175,7 @@ def main():
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
 
-    count = create_backup(backup, gen_workspace, 'ResolveLine', count)
+    count = create_backup(backup, gen_workspace, output_folder, 'ResolveLine', count)  
 
     #Run the point conflicts script
     arcpy.AddMessage("Running Structure Conflicts Model")
@@ -158,7 +186,7 @@ def main():
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
 
-    count = create_backup(backup, gen_workspace, 'ResolveStructure', count)
+    count = create_backup(backup, gen_workspace, output_folder, 'ResolveStructure', count)  
 
     #Run the hydro conflicts script
     arcpy.AddMessage("Running Hydro Conflicts Model")
@@ -169,7 +197,9 @@ def main():
     arcpy.AddMessage(arcpy.GetMessages())
     arcpy.AddMessage("Took " + str(end - start))
 
-    count = create_backup(backup, gen_workspace, 'ResolveHydro', count)
+    count = create_backup(backup, gen_workspace, output_folder, 'ResolveHydro', count)
+    
+    arcpy.Delete_management(scratch_workspace)
     
     #Clean up the final database
     if arcpy.Exists(os.path.join(gen_workspace, "AOI_Boundary_line")) == True:
@@ -179,9 +209,11 @@ def main():
     if arcpy.Exists(os.path.join(gen_workspace, "Partition")) == True:
         arcpy.Delete_management(os.path.join(gen_workspace, "Partition"))
 
-
     end_end = datetime.datetime.now().replace(microsecond=0)
 
+    arcpy.CheckInExtension("foundation")
+    arcpy.CheckInExtension("Spatial")
+    
     arcpy.AddMessage("Took Total " + str(end_end - start_start))
     arcpy.SetParameter(6, gen_workspace)
     pass
