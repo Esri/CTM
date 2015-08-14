@@ -12,8 +12,6 @@
 ###| See the License for the specific language governing permissions and
 ###| limitations under the License.
 
-
-
 """This python toolbox contains tools for
 creating a new map for the Fixed 25K Product"""
 import arcpy
@@ -397,12 +395,12 @@ class MapGenerator(object):
                 #Getting the list of data frames
                 data_frame_list = arcpy.mapping.ListDataFrames(final_mxd)
                 adjoining_data_frame = None
-                boundaries_data_frame = None
+                location_data_frame = None
                 for b_data_frame in data_frame_list:
                     if b_data_frame.name == "AdjoiningSheet":
                         adjoining_data_frame = b_data_frame
                     elif b_data_frame.name == "LocationDiagram":
-                        boundaries_data_frame = b_data_frame
+                        location_data_frame = b_data_frame
 
                 #Gets the list of layout elements
                 layout_elements = arcpy.mapping.ListLayoutElements(final_mxd)
@@ -459,17 +457,15 @@ class MapGenerator(object):
                         # Removes the AOI Index Layer
                         arcpy.mapping.RemoveLayer(adjoining_data_frame, layer)
                         # Pans and zooms the DF to the correct location for the new AOI Layer
-                        sql_statement = "AOI_Name = '" + str(product.mapSheetName) + "'"
-                        arcpy.SelectLayerByAttribute_management(custom_aoi_lyr, "NEW_SELECTION", sql_statement)
                         adjoining_data_frame.panToExtent(custom_aoi_lyr.getSelectedExtent())
                         break
                 arcpy.AddMessage("Updated the Adjoining Sheet Data Frame...")
                 del layers
 
-                # Updating the Boundaries Data Frame
-                boundaries_data_frame.spatialReference = grid.baseSpatialReference
+                # Updating the Location Data Frame
+                location_data_frame.spatialReference = grid.baseSpatialReference
 
-                layers = arcpy.mapping.ListLayers(final_mxd, "", boundaries_data_frame)
+                layers = arcpy.mapping.ListLayers(final_mxd, "", location_data_frame)
                 index_aoi = None
                 us_states = None
 
@@ -481,9 +477,9 @@ class MapGenerator(object):
                 del layers
 
                 # Adding the custom AOI Layer
-                arcpy.mapping.AddLayer(boundaries_data_frame, custom_aoi_lyr, "TOP")
+                arcpy.mapping.AddLayer(location_data_frame, custom_aoi_lyr, "TOP")
                 # Removing the current AOI Index Layer
-                arcpy.mapping.RemoveLayer(boundaries_data_frame, index_aoi)
+                arcpy.mapping.RemoveLayer(location_data_frame, index_aoi)
 
                 state_name = None
                 state_extent = None
@@ -497,16 +493,13 @@ class MapGenerator(object):
 
                 # Updating the States Layer with the correct State
                 us_states.definitionQuery = "STATE_NAME = '" + str(state_name) + "'"
-                boundaries_data_frame.extent = state_extent
-                boundaries_data_frame.scale = boundaries_data_frame.scale * 1.2
-                arcpy.AddMessage("Updating the Boundaries Data Frame...")
-                arcpy.SelectLayerByAttribute_management(us_states, "CLEAR_SELECTION")
-                
+                location_data_frame.extent = state_extent
+                location_data_frame.scale = location_data_frame.scale * 1.2
+                arcpy.AddMessage("Updating the Location Data Frame...")                
 
                 # Setting the Map Sheet Information
                 map_aoi_layer.definitionQuery = ""
-                #arcpy.SelectLayerByLocation_management(map_aoi_layer, "CONTAINS", custom_aoi_lyr, "#", "NEW_SELECTION")
-                
+
                 aoi_count = 0
                 map_series = None
                 map_edition = None
@@ -567,8 +560,6 @@ class MapGenerator(object):
             arcpy.AddError("System Error: " + sys.exc_info()[0])
         except Exception as ex:
             arcpy.AddError("Unexpected Error: " + ex.message)
-
-
 
 class DesktopGateway(object):
     """ Class that contains the code to generate a new map based off the input aoi"""
@@ -660,14 +651,14 @@ class DesktopGateway(object):
         #map_aoi.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\SaltLakeCity.gdb\SLC_AOIs"
         #map_aoi.value = "SLC_AOIs"
         #map_name_field.value = "QUAD_NAME"
-        map_template.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM25KTemplate.mxd"
-        grid_xml.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM_UTM_WGS84_grid.xml"
+        #map_template.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM25KTemplate.mxd"
+        #grid_xml.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM_UTM_WGS84_grid.xml"
         #export_type.value = "LAYOUT GEOTIFF"
-        export_type.value = "PDF"
-        working_directory.value = r"C:\arcgisserver\MCS_POD\WMX\Test_Working_Dir"
+        #export_type.value = "PDF"
+        #working_directory.value = r"C:\arcgisserver\MCS_POD\WMX\Test_Working_Dir"
         #production_workspace.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\SaltLakeCity.gdb"
         #production_pdf_xml.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\CTM_Production_PDF.xml"
-        keep_mxd.value = True
+        #keep_mxd.value = True
         return params
 
     def isLicensed(self):
