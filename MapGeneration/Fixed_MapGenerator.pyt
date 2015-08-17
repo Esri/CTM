@@ -690,7 +690,7 @@ class DesktopGateway(object):
             feature_count = arcpy.GetCount_management(parameters[0].value)
             # Returns a warning if the AOI Layer has more than 25 features.
             if int(feature_count.getOutput(0)) > 25:
-                parameters[0].setWarningMessage("The Map AOI layer has more than 25 features, process might be slow.  The AOI Layer has: " + str(feature_count.getOutput(0)) + " features.")
+                parameters[0].setWarningMessage("More than 25 areas of interest (AOI) have been specified for the Map AOI parameter. Maps for " + str(feature_count.getOutput(0)) + " AOIs will be generated. This process might take some time.")
         return        
 
     def execute(self, parameters, messages):
