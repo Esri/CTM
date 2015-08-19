@@ -178,9 +178,7 @@ def main():
 
         count = create_backup(backup, gen_workspace, output_folder, 'ResolveHydro', count)
 
-        arcpy.Delete_management(scratch_workspace)
-
-         #Run the veg conflicts script
+        #Run the veg conflicts script
         arcpy.AddMessage("Running Vegetation Conflicts Model")
         start = datetime.datetime.now().replace(microsecond=0)
         arcpy.ResolveVeg_CTM50KGeneralization(gen_workspace, scratch_workspace)
