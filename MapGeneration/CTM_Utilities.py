@@ -179,8 +179,6 @@ def export_map_document(product_location, mxd, map_doc_name, data_frame,
         elif export == 'PRODUCTION PDF' or export == 'MULTI-PAGE PDF':
             filename = filename_prefixe + map_doc_name  + ".pdf"
             outfile = os.path.join(outputdirectory, filename)
-            if production_xml == None:  
-                production_xml = "colormap.xml"
             setting_file = os.path.join(product_location, production_xml)
 
             if os.path.exists(setting_file) == True:

@@ -404,6 +404,8 @@ class MapGenerator(object):
 
                 #Gets the list of layout elements
                 layout_elements = arcpy.mapping.ListLayoutElements(final_mxd)
+                
+                product.quad_id = ""
 
                 # Makes the mask layer invisible and prepares map for save
                 anno_mask.visible = "false"
@@ -531,19 +533,11 @@ class MapGenerator(object):
                 
                 # Export the Map to the selected format
                 if "productionPDFXML" in product.keys():
-<<<<<<< HEAD:Fixed25K/Cartography/MapGeneration/Fixed25K_MapGenerator.pyt
-                    file_name = Utilities.export_map_document(product_location, final_mxd,
-                                                              map_doc_name, data_frame,
-                                                              self.outputdirectory, product.exporter, product.productionPDFXML)
-                else:
-                    file_name = Utilities.export_map_document(product_location, final_mxd,
-=======
                     file_name = CTM_Utilities.export_map_document(product_location, final_mxd,
                                                               map_doc_name, data_frame,
                                                               self.outputdirectory, product.exporter, product.productionPDFXML)
                 else:
                     file_name = CTM_Utilities.export_map_document(product_location, final_mxd,
->>>>>>> Fixed-50K-Development:MapGeneration/Fixed_MapGenerator.pyt
                                                               map_doc_name, data_frame,
                                                               self.outputdirectory, product.exporter)                 
                 parameters[1].value = file_name
@@ -696,20 +690,7 @@ class DesktopGateway(object):
             feature_count = arcpy.GetCount_management(parameters[0].value)
             # Returns a warning if the AOI Layer has more than 25 features.
             if int(feature_count.getOutput(0)) > 25:
-<<<<<<< HEAD:Fixed25K/Cartography/MapGeneration/Fixed25K_MapGenerator.pyt
-                parameters[0].setWarningMessage("The Map AOI layer has more than 25 features, process might be slow.  The AOI Layer has: " + str(feature_count.getOutput(0)) + " features.")
-        elif parameters[4].altered == True:
-            if parameters[4].value <> "Production PDF":
-                parameters[6].enabled = False
-            elif parameters[4].value == "Production PDF":
-                parameters[6].enabled = True
-                xml_value = parameters[6].value
-                if not xml_value:
-                    parameters[6].setErrorMessage("If Production PDF Exporter is chosen, you must input a Production PDF XML color mapping file.")
-          
-=======
                 parameters[0].setWarningMessage("More than 25 areas of interest (AOI) have been specified for the Map AOI parameter. Maps for " + str(feature_count.getOutput(0)) + " AOIs will be generated. This process might take some time.")
->>>>>>> Fixed-50K-Development:MapGeneration/Fixed_MapGenerator.pyt
         return        
 
     def execute(self, parameters, messages):
@@ -806,11 +787,9 @@ class DesktopGateway(object):
             arcpy.AddError("Unexpected Error: " + ex.message)
 
 
-
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = MapGenerator()
     #g = DesktopGateway()
     ##g = MapGenerator()
     #par = g.getParameterInfo()
