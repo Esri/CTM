@@ -59,7 +59,8 @@ class MapGenerator(object):
                                       datatype="GPString",
                                       parameterType="Derived")
 
-        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_UTM_WGS84_grid.xml","pageMargin":"0","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453869.338275107,4938870.05400884],[-12453869.339388302,4957186.4929140275],[-12439954.400256153,4957186.4943807106],[-12439954.399142958,4938870.0554727865],[-12453869.338275107,4938870.05400884]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"scale":500000,"pageSize":"LETTER PORTRAIT","quad_id":403011145,"mapSheetName":"Draper","customName":"", "toolName":"MapGenerator", "productionPDFXML":"CTM_Production_PDF.xml"}'
+        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12439953.094812483,4938869.1756399088],[-12432995.630422764,4938869.1756399088],[-12426038.166033052,4938869.1756399088],[-12426038.166033052,4929723.76238856],[-12426038.166033052,4920586.8467766978],[-12432995.630422764,4920586.8467766978],[-12439953.094812483,4920586.8467766978],[-12439953.094812483,4929723.76238856],[-12439953.094812483,4938869.1756399088]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","mapSheetName":"Timpanogos Cave ","customName":""}'
+
         params = [product_as_json, output_file]
         return params
 
@@ -173,10 +174,14 @@ class MapGenerator(object):
             map_doc_name = map_name + "_" + timestamp
             arcpy.AddMessage("Creating the map for the " + map_name + " aoi...")
             
+            if "keep_mxd_backup" in product.keys():
+                mxd_backup = product.keep_mxd_backup
+            else:
+                mxd_backup = False
             
             # Gets the mxd object
             # Creates the AOI specific mxd in the scratch location, if keeping backup copies
-            if product.keep_mxd_backup == True:
+            if mxd_backup == True:
                 final_mxd_path = os.path.join(scratch_folder, map_doc_name + ".mxd")
                 arcpy.AddMessage("MXD path is: " + final_mxd_path)
                 shutil.copy(mxd_path, final_mxd_path)
@@ -480,13 +485,28 @@ class MapGenerator(object):
                 arcpy.mapping.AddLayer(location_data_frame, custom_aoi_lyr, "TOP")
                 # Removing the current AOI Index Layer
                 arcpy.mapping.RemoveLayer(location_data_frame, index_aoi)
-
+                
+                # Removing Definition querry on US States
+                us_states.definitionQuery = ""
+                
+                # Gets the Spatial Reference for the US States Layer
+                desc = arcpy.Describe(us_states)
+                us_state_sr = desc.spatialReference    
+                geo_fc_desc = arcpy.Describe(aoi)
+                temp_fc = os.path.join(scratch_workspace, "temp_fc")
+                temp_geo = None
+                if us_state_sr != geo_fc_desc.spatialReference:
+                    arcpy.Project_management(aoi, temp_fc, us_state_sr)
+                    with arcpy.da.SearchCursor(temp_fc, ["SHAPE@"]) as s_cursor:
+                        for row in s_cursor:
+                            temp_geo = row[0]
+                                                
                 state_name = None
                 state_extent = None
                 with arcpy.da.SearchCursor(us_states, ["SHAPE@", "STATE_NAME"]) as s_cursor:
                     for row in s_cursor:
                         geo = row[0]
-                        if geo.contains(arcpy.AsShape(json.dumps(product.geometry), True)) == True:
+                        if geo.contains(temp_geo) == True:
                             state_name = row[1]
                             state_extent = row[0].extent
                             break
@@ -495,6 +515,7 @@ class MapGenerator(object):
                 us_states.definitionQuery = "STATE_NAME = '" + str(state_name) + "'"
                 location_data_frame.extent = state_extent
                 location_data_frame.scale = location_data_frame.scale * 1.2
+
                 arcpy.AddMessage("Updating the Location Data Frame...")                
 
                 # Setting the Map Sheet Information
@@ -525,7 +546,7 @@ class MapGenerator(object):
                 arcpy.RefreshActiveView()
                 arcpy.RefreshTOC()
                 
-                if product.keep_mxd_backup == True:
+                if mxd_backup == True:
                     final_mxd.save()
 
                 arcpy.AddMessage("Finalizing the map document...")
@@ -542,24 +563,27 @@ class MapGenerator(object):
                                                               self.outputdirectory, product.exporter)                 
                 parameters[1].value = file_name
                 
-                arcpy.AddMessage("Keep mxd value is " + str(product.keep_mxd_backup))
+                arcpy.AddMessage("Keep mxd value is " + str(mxd_backup))
 
                 # Delete feature dataset created for grid (Option for Development)
-                if product.keep_mxd_backup == False:
+                if mxd_backup == False:
                     arcpy.AddMessage("Cleaning up all the intermediate data.")
                     arcpy.Delete_management(gfds)
                     del final_mxd, grid, custom_aoi_layer, custom_aoi_lyr
-                    arcpy.Delete_management(final_mxd_path)
                     arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
+                    if mxd_backup == True:
+                        arcpy.Delete_management(final_mxd_path)
+
 
             return
 
         except arcpy.ExecuteError:
             arcpy.AddError(arcpy.GetMessages(2))
-        except SystemError:
-            arcpy.AddError("System Error: " + sys.exc_info()[0])
         except Exception as ex:
-            arcpy.AddError("Unexpected Error: " + ex.message)
+            arcpy.AddError(ex.message)
+            tb = sys.exc_info()[2]
+            tbinfo = traceback.format_tb(tb)[0]
+            arcpy.AddError("Traceback info:\n" + tbinfo)
 
 class DesktopGateway(object):
     """ Class that contains the code to generate a new map based off the input aoi"""
@@ -648,17 +672,17 @@ class DesktopGateway(object):
         params = [map_aoi, map_name_field, map_template, grid_xml, export_type, working_directory, production_pdf_xml, production_workspace, keep_mxd, output_file]
 
         # Default Values for Debugging
-        #map_aoi.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\SaltLakeCity.gdb\SLC_AOIs"
+        #map_aoi.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\SaltLakeCity.gdb\Draper"
         #map_aoi.value = "SLC_AOIs"
         #map_name_field.value = "QUAD_NAME"
         #map_template.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM25KTemplate.mxd"
-        #grid_xml.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM_UTM_WGS84_grid.xml"
+        #grid_xml.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM_25K_UTM_WGS84_grid.xml"
         #export_type.value = "LAYOUT GEOTIFF"
         #export_type.value = "PDF"
-        #working_directory.value = r"C:\arcgisserver\MCS_POD\WMX\Test_Working_Dir"
+        #working_directory.value = r"C:\Temp"
         #production_workspace.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\SaltLakeCity.gdb"
         #production_pdf_xml.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\CTM_Production_PDF.xml"
-        #keep_mxd.value = True
+        keep_mxd.value = True
         return params
 
     def isLicensed(self):
@@ -781,17 +805,18 @@ class DesktopGateway(object):
 
         except arcpy.ExecuteError:
             arcpy.AddError(arcpy.GetMessages(2))
-        except SystemError:
-            arcpy.AddError("System Error: " + sys.exc_info()[0])
         except Exception as ex:
-            arcpy.AddError("Unexpected Error: " + ex.message)
+            arcpy.AddError(ex.message)
+            tb = sys.exc_info()[2]
+            tbinfo = traceback.format_tb(tb)[0]
+            arcpy.AddError("Traceback info:\n" + tbinfo)
 
 
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = DesktopGateway()
-    ##g = MapGenerator()
+    ##g = DesktopGateway()
+    #g = MapGenerator()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
