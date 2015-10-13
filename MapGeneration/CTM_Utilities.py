@@ -22,11 +22,11 @@ import traceback
 import sys
 
 # Path to the Products folder
-shared_products_path = r"\\SHEFFIELDJ\arcgisserver\MCS_POD\Products"
+shared_products_path = r"\\<computer_name>\arcgisserver\MCS_POD\Products"
 
 # Path to the ArcGIS Server output directory
-output_directory = r"\\SHEFFIELDJ\arcgisserver\directories\arcgisoutput"
-output_url = r"http://SHEFFIELDJ.esri.com:6080/arcgis/rest/directories/arcgisoutput/"
+output_directory = r"\\<computer_name>\arcgisserver\directories\arcgisoutput"
+output_url = r"http://<computer_name>.esri.com:6080/arcgis/rest/directories/arcgisoutput/"
 
 def get_largest_data_frame(mxd):
     """Returns the largest data frame from mxd"""
