@@ -60,7 +60,7 @@ class MapGenerator(object):
                                       parameterType="Derived")
 
         # For Debugging and testing
-        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"0","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453869.338275107,4938870.05400884],[-12453869.339388302,4957186.4929140275],[-12439954.400256153,4957186.4943807106],[-12439954.399142958,4938870.0554727865],[-12453869.338275107,4938870.05400884]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"scale":500000,"pageSize":"LETTER PORTRAIT","quad_id":403011145,"mapSheetName":"Draper","customName":"", "toolName":"MapGenerator", "productionPDFXML":"CTM_25K_Production_PDF.xml"}'
+        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453868.023369277,4957185.0579098556],[-12446910.558979558,4957185.6017564666],[-12439953.094812483,4957185.6017564666],[-12439953.094812483,4948023.1131076179],[-12439953.094812483,4938869.1756399088],[-12446910.558979558,4938869.1756399088],[-12453868.023369277,4938869.1756399088],[-12453868.023369277,4948023.1131076179],[-12453868.023369277,4957185.0579098556]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","mapSheetName":"Draper ","customName":""}'
         params = [product_as_json, output_file]
         return params
 
@@ -475,7 +475,7 @@ class MapGenerator(object):
                 with arcpy.da.SearchCursor(us_states, ["SHAPE@", "STATE_NAME"]) as s_cursor:
                     for row in s_cursor:
                         geo = row[0]
-                        if geo.contains(arcpy.AsShape(json.dumps(product.geometry), True)) == True:
+                        if geo.contains((arcpy.AsShape(json.dumps(product.geometry), True)).projectAs(grid.baseSpatialReference.GCS)) == True:
                             state_name = row[1]
                             state_extent = row[0].extent
                             break
@@ -499,7 +499,7 @@ class MapGenerator(object):
                         map_sheet = row[1]
                         map_series = row[2]
                         map_edition = row[3]
-                        if map_aoi_geo.equals(arcpy.AsShape(json.dumps(product.geometry), True)) == True:
+                        if map_aoi_geo.equals((arcpy.AsShape(json.dumps(product.geometry), True)).projectAs(grid.baseSpatialReference.GCS)) == True:
                             aoi_count = aoi_count + 1
 
                 if aoi_count <> 1:
