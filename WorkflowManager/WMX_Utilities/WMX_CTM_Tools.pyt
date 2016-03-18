@@ -547,7 +547,6 @@ class ExecuteDataReviewBatchJob(object):
                                       direction="Input",
                                       datatype="DEWorkspace",
                                       parameterType="Required")
-
         session = arcpy.Parameter(name="session",
                                   displayName="Reviewer Session",
                                   direction="Input",
@@ -557,7 +556,8 @@ class ExecuteDataReviewBatchJob(object):
                                          displayName="Batch Job File",
                                          direction="Input",
                                          datatype="DEFile",
-                                         parameterType="Required")
+                                         parameterType="Required", 
+                                         multiValue=True)
         production_ws = arcpy.Parameter(name="production_ws",
                                         displayName="Production Workspace",
                                         direction="Input",
@@ -568,10 +568,10 @@ class ExecuteDataReviewBatchJob(object):
                                  direction="Output",
                                  datatype="GPString",
                                  parameterType="Derived")
-        #reviewer_ws.value = r"\\sheffieldj\arcgisserver\mcs_pod\WMX\WMX_Utilities\CTM_DR.sde"
-        #session.value = "Session 4904 : 55203"
-        #batch_job_file.value = r"C:\Temp\Test_1.rbj"
-        #production_ws.value = r"\\sheffieldj\arcgisserver\MCS_POD\WMX\WMX_Jobs\WMX_JOB_60403\Job_60403_Replica.gdb"
+        #reviewer_ws.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Utilities\CTM_DR.sde"
+        #session.value = "Session 11 : Session 11"
+        #batch_job_file.value = [r"C:\Data\MCS_POD\Fixed25K\BatchJobs\CTM_Spatial_Checks\CTM_Cutbacks_Line_Check.rbj", r"C:\Data\MCS_POD\Fixed25K\BatchJobs\CTM_Spatial_Checks\CTM_Cutbacks_Polygon_Check.rbj", r"C:\Data\MCS_POD\Fixed25K\BatchJobs\CTM_Spatial_Checks\CTM_Duplicate_Geometry_Check.rbj"]
+        #production_ws.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\SaltLakeCity.gdb"
 
         params = [reviewer_ws, session, batch_job_file, production_ws, result]
         return params
@@ -601,7 +601,9 @@ class ExecuteDataReviewBatchJob(object):
 
             reviewer_ws = parameters[0].value
             session = parameters[1].value
-            batch_job_file = parameters[2].value
+            batch_job_file_list = parameters[2].value
+            
+            arcpy.AddMessage(str(batch_job_file_list))
             production_ws = parameters[3].value
 
             arcpy.env.workspace = reviewer_ws
@@ -623,9 +625,12 @@ class ExecuteDataReviewBatchJob(object):
             arcpy.AddMessage("Initial Count is: " + str(inital_count))
             table_selection = arcpy.SelectLayerByAttribute_management(rev_table_mian_lyr, "CLEAR_SELECTION")
             arcpy.AddMessage("Selection has been cleared.")
-
-            result_table = arcpy.ExecuteReviewerBatchJob_Reviewer(reviewer_ws, session, batch_job_file, production_ws)
-            arcpy.AddMessage(result_table.getMessages())
+                
+            for i in range(0, batch_job_file_list.rowCount):
+                batch_job_file = batch_job_file_list.getRow(i)
+                arcpy.AddMessage("Running RBJ file: " + str(batch_job_file))
+                result_table = arcpy.ExecuteReviewerBatchJob_Reviewer(reviewer_ws, session, batch_job_file.strip("'"), production_ws)
+                arcpy.AddMessage(result_table.getMessages())
 
             table_selection = arcpy.SelectLayerByAttribute_management(rev_table_mian_lyr, "NEW_SELECTION", "SESSIONID = " + session_id)
             final_count = int(arcpy.GetCount_management(table_selection).getOutput(0))
@@ -827,7 +832,7 @@ class IncreaseReviewLoopCount(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = DataReviewLoopCount()
+    #g = ExecuteDataReviewBatchJob()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
