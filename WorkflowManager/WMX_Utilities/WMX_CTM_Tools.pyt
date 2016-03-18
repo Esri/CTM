@@ -536,8 +536,8 @@ class ExecuteDataReviewBatchJob(object):
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Execute Data Review BatchJob"
-        self.description = "Execute Data Review BatchJob"
+        self.label = "Workflow Manager Execute Data Review Batch Job"
+        self.description = "Workflow Manager Execute Data Review Batch Job"
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -563,6 +563,11 @@ class ExecuteDataReviewBatchJob(object):
                                         direction="Input",
                                         datatype="DEWorkspace",
                                         parameterType="Required")
+        input_job_id = arcpy.Parameter(name="input_job_id",
+                                       displayName="Input WMX Job ID",
+                                       direction="Input",
+                                       datatype="GPLong",
+                                       parameterType="Required")        
         result = arcpy.Parameter(name="result",
                                  displayName="Result",
                                  direction="Output",
@@ -572,8 +577,9 @@ class ExecuteDataReviewBatchJob(object):
         #session.value = "Session 11 : Session 11"
         #batch_job_file.value = [r"C:\Data\MCS_POD\Fixed25K\BatchJobs\CTM_Spatial_Checks\CTM_Cutbacks_Line_Check.rbj", r"C:\Data\MCS_POD\Fixed25K\BatchJobs\CTM_Spatial_Checks\CTM_Cutbacks_Polygon_Check.rbj", r"C:\Data\MCS_POD\Fixed25K\BatchJobs\CTM_Spatial_Checks\CTM_Duplicate_Geometry_Check.rbj"]
         #production_ws.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\SaltLakeCity.gdb"
+        #input_job_id.value = 4001
 
-        params = [reviewer_ws, session, batch_job_file, production_ws, result]
+        params = [reviewer_ws, session, batch_job_file, production_ws, input_job_id, result]
         return params
 
     def isLicensed(self):
@@ -597,6 +603,7 @@ class ExecuteDataReviewBatchJob(object):
         """The source code of the tool."""
         try:
             arcpy.CheckOutExtension("datareviewer")
+            arcpy.CheckOutExtension("JTX")
             arcpy.env.overwriteOutput = True
 
             reviewer_ws = parameters[0].value
@@ -605,6 +612,7 @@ class ExecuteDataReviewBatchJob(object):
             
             arcpy.AddMessage(str(batch_job_file_list))
             production_ws = parameters[3].value
+            input_job_id = str(parameters[4].value)
 
             arcpy.env.workspace = reviewer_ws
             tablelist = arcpy.ListTables()
@@ -625,11 +633,14 @@ class ExecuteDataReviewBatchJob(object):
             arcpy.AddMessage("Initial Count is: " + str(inital_count))
             table_selection = arcpy.SelectLayerByAttribute_management(rev_table_mian_lyr, "CLEAR_SELECTION")
             arcpy.AddMessage("Selection has been cleared.")
-                
+            
+            job_aoi_layer = "AOILayer_Job" + input_job_id
+            aoi = arcpy.GetJobAOI_wmx(input_job_id, job_aoi_layer, "")
+                            
             for i in range(0, batch_job_file_list.rowCount):
                 batch_job_file = batch_job_file_list.getRow(i)
                 arcpy.AddMessage("Running RBJ file: " + str(batch_job_file))
-                result_table = arcpy.ExecuteReviewerBatchJob_Reviewer(reviewer_ws, session, batch_job_file.strip("'"), production_ws)
+                result_table = arcpy.ExecuteReviewerBatchJob_Reviewer(reviewer_ws, session, batch_job_file.strip("'"), production_ws, aoi)
                 arcpy.AddMessage(result_table.getMessages())
 
             table_selection = arcpy.SelectLayerByAttribute_management(rev_table_mian_lyr, "NEW_SELECTION", "SESSIONID = " + session_id)
@@ -642,19 +653,19 @@ class ExecuteDataReviewBatchJob(object):
             arcpy.AddMessage("Batch Job Result is: " + str(rbj_result))
 
             if rbj_result == 0 and (inital_count == final_count):
-                parameters[4].value = 0
+                parameters[5].value = 0
                 arcpy.AddMessage("Batch job executed successfully, and no results were returned.")
             elif rbj_result == 0 and (final_count > inital_count):
-                parameters[4].value = 1
+                parameters[5].value = 1
                 arcpy.AddMessage("Batch job executed successfully, and results were written to the Reviewer session.")
             elif rbj_result == 4:
-                parameters[4].value = 2
+                parameters[5].value = 2
                 arcpy.AddMessage("Batch job failed to execute.")
             elif (rbj_result == 1 or rbj_result == 2 or rbj_result == 3) and (inital_count == final_count):
-                parameters[4].value = 3
+                parameters[5].value = 3
                 arcpy.AddMessage("Batch job executed successfully with errors or warnings, and no results were returned. ")
             elif (rbj_result == 1 or rbj_result == 2 or rbj_result == 3) and (final_count > inital_count):
-                parameters[4].value = 4
+                parameters[5].value = 4
                 arcpy.AddMessage("Batch job executed successfully with errors or warnings, and results were written to the Reviewer session.")
             return
 
@@ -831,10 +842,10 @@ class IncreaseReviewLoopCount(object):
             arcpy.AddError("Unexpected Error: " + ex.message)
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
-#def main():
-    #g = ExecuteDataReviewBatchJob()
-    #par = g.getParameterInfo()
-    #g.execute(par, None)
+def main():
+    g = ExecuteDataReviewBatchJob()
+    par = g.getParameterInfo()
+    g.execute(par, None)
 
-#if __name__ == '__main__':
-    #main()
+if __name__ == '__main__':
+    main()
