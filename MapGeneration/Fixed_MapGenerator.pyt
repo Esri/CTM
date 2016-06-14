@@ -20,7 +20,16 @@ import os
 import sys
 import json
 import shutil
-import CTM_Utilities
+#import CTM_Utilities
+
+# Global Variables:
+
+# Path to the Products folder
+shared_products_path = r"C:\arcgisserver\MCS_POD\Products"
+
+# Path to the ArcGIS Server output directory
+output_directory = r"C:\arcgisserver\directories\arcgisoutput"
+output_url = r"https://jsheffield.esri.com/arcgis/rest/directories/arcgisoutput/"
 
 class Toolbox(object):
     """Toolbox classes, ArcMap needs this class."""
@@ -29,21 +38,17 @@ class Toolbox(object):
         self.label = "Fixed Tools"
         self.alias = "fixedTools"
         # List of tool classes associated with this toolbox
-        self.tools = [MapGenerator, DesktopGateway]
+        self.tools = [MapGenerator_25K, MapGenerator_50K, DesktopGateway]
+              
 
-class MapGenerator(object):
+class MapGenerator_25K(object):
     """ Class that contains the code to generate a new map based off the input aoi"""
 
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Map Generation JSON"
+        self.label = "25K Map Generation JSON"
         self.description = "Python Script used to create the a new map at a 1:25000 scale"
         self.canRunInBackground = False
-
-        #Path to the AGS Output Directory
-        self.outputdirectory = CTM_Utilities.output_directory
-        # Path to MCS_POD's Product Location
-        self.shared_prod_path = CTM_Utilities.shared_products_path
 
     def getParameterInfo(self):
         """Define parameter definitions"""
@@ -60,7 +65,7 @@ class MapGenerator(object):
                                       parameterType="Derived")
 
         # For Debugging and testing
-        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453868.023369277,4957185.0579098556],[-12446910.558979558,4957185.6017564666],[-12439953.094812483,4957185.6017564666],[-12439953.094812483,4948023.1131076179],[-12439953.094812483,4938869.1756399088],[-12446910.558979558,4938869.1756399088],[-12453868.023369277,4938869.1756399088],[-12453868.023369277,4948023.1131076179],[-12453868.023369277,4957185.0579098556]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","mapSheetName":"Draper ","customName":""}'
+        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_25K","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453868.023369277,4938869.1756399116],[-12446910.558979558,4938869.1756399116],[-12439953.094812483,4938869.1756399116],[-12439953.094812483,4929723.7623885619],[-12439953.094812483,4920586.8467766969],[-12446910.558979558,4920586.28025827],[-12453868.023369277,4920586.8467766969],[-12453868.023369277,4929723.7623885619],[-12453868.023369277,4938869.1756399116]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","mapSheetName":"Lehi ","customName":""}'
         params = [product_as_json, output_file]
         return params
 
@@ -80,7 +85,266 @@ class MapGenerator(object):
         """Modify the messages created by internal validation for each tool
         parameter.  This method is called after internal validation."""
         return
+    
+    def execute(self, parameters, messages):
+        # Calls the Map Generation logic.
+        product_json = parameters[0].value
+        map_generator_class = MapGenerator()
+        create_map_method = getattr(map_generator_class, 'createmap')
+        outfile = create_map_method(product_json)
+        parameters[1].value = outfile
+        return
 
+        
+class MapGenerator_50K(object):
+    """ Class that contains the code to generate a new map based off the input aoi"""
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "50K Map Generation JSON"
+        self.description = "Python Script used to create the a new map at a 1:50000 scale"
+        self.canRunInBackground = False
+
+        #Path to the AGS Output Directory
+        self.outputdirectory = output_directory
+        # Path to MCS_POD's Product Location
+        self.shared_prod_path = shared_products_path
+
+    def getParameterInfo(self):
+        """Define parameter definitions"""
+        product_as_json = arcpy.Parameter(name="product_as_json",
+                                          displayName="Product As JSON",
+                                          direction="Input",
+                                          datatype="GPString",
+                                          parameterType="Required")
+
+        output_file = arcpy.Parameter(name="output_file",
+                                      displayName="Output File",
+                                      direction="Output",
+                                      datatype="GPString",
+                                      parameterType="Derived")
+
+        # For Debugging and testing
+        #product_as_json.value = '{"productName":"Fixed 50K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator50K","mxd":"CTM50KTemplate.mxd","gridXml":"CTM_50K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12439953.094701165,4920586.8467766969],[-12446910.559090884,4920586.28025827],[-12453868.023369277,4920586.8467766969],[-12453868.023369277,4929723.7623885619],[-12453868.023369277,4938869.1754935188],[-12453868.023369277,4948023.1131076179],[-12453868.023369277,4957185.0579098556],[-12446910.559090884,4957185.601903135],[-12439953.094701165,4957185.601903135],[-12432995.630311446,4957185.601903135],[-12426038.166033052,4957185.601903135],[-12426038.166033052,4948023.1131076179],[-12426038.166033052,4938869.1754935188],[-12426038.166033052,4929723.7623885619],[-12426038.166033052,4920586.8467766969],[-12432995.630311446,4920586.8467766969],[-12439953.094701165,4920586.8467766969]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","mapSheetName":"Draper","customName":""}'
+        params = [product_as_json, output_file]
+        return params
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        if arcpy.CheckExtension("foundation") == "Available":
+            return True
+        return False
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        return
+    
+    def execute(self, parameters, messages):
+        # Calls the Map Generation logic.
+        product_json = parameters[0].value
+        map_generator_class = MapGenerator()
+        create_map_method = getattr(map_generator_class, 'createmap')
+        outfile = create_map_method(product_json)
+        parameters[1].value = outfile        
+        return
+
+    
+class DictToObject(dict):
+    """Convert dictionary into class"""
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+    def __getattr__(self, name):
+        return self[name]
+    def __setattr__(self, name, value):
+        self[name] = value
+        
+class MapGenerator(object):    
+    
+    def get_largest_data_frame(self,mxd):
+            """Returns the largest data frame from mxd"""
+            data_frame_list = arcpy.mapping.ListDataFrames(mxd)
+            area = 0
+            for df in data_frame_list:
+                if area < df.elementWidth * df.elementHeight:
+                    area = df.elementWidth * df.elementHeight
+                    data_frame = df
+            return data_frame
+        
+    def get_date_time(self):
+            """Returns the current date and time"""
+            date = datetime.datetime.now()
+            return date.strftime("%m%d%Y_%H%M%S")
+        
+    def export_map_document(self,product_location, mxd, map_doc_name, data_frame,
+                            outputdirectory, export_type, production_xml=None):
+        """Exports MXD to chosen file type"""
+    
+        try:
+            export = export_type.upper()
+            product = arcpy.ProductInfo()
+            arcpy.AddMessage("Product: " + product)
+            
+            if product == 'ArcServer':
+                filename_prefixe = "_ags_"
+            else:
+                filename_prefixe = ""
+    
+            if export == "PDF":
+                filename = filename_prefixe + map_doc_name  + ".pdf"
+                outfile = os.path.join(outputdirectory, filename)
+    
+                # Export to PDF optional parameters
+                data_frame = "PAGE_LAYOUT"
+                df_export_width = 640
+                df_export_height = 480
+                resolution = 300
+                image_quality = "BEST"
+                colorspace = "RGB"
+                compress_vectors = True
+                image_compression = "ADAPTIVE"
+                picture_symbol = "RASTERIZE_BITMAP"
+                convert_markers = False
+                embed_fonts = True
+                layers_attributes = "LAYERS_ONLY"
+                georef_info = True
+                jpeg_compression_quality = 80
+    
+                # Run the export tool
+                arcpy.mapping.ExportToPDF(mxd, outfile, data_frame, df_export_width,
+                                          df_export_height, resolution,
+                                          image_quality, colorspace,
+                                          compress_vectors, image_compression,
+                                          picture_symbol, convert_markers,
+                                          embed_fonts, layers_attributes,
+                                          georef_info, jpeg_compression_quality)
+                arcpy.AddMessage("PDF is located: " + outfile)
+                arcpy.AddMessage(filename)
+                return filename
+    
+            elif export == 'JPEG':
+                filename = filename_prefixe + map_doc_name  + ".jpg"
+                outfile = os.path.join(outputdirectory, filename)
+    
+                # Export to JEPG optional parameters
+                data_frame = "PAGE_LAYOUT"
+                df_export_width = 640
+                df_export_height = 480
+                resolution = 96
+                world_file = False
+                color_mode = "24-BIT_TRUE_COLOR"
+                jpeg_quality = 100
+                progressive = False
+    
+                # Run the export tool
+                arcpy.mapping.ExportToJPEG(mxd, outfile, data_frame,
+                                           df_export_width, df_export_height,
+                                           resolution, world_file, color_mode,
+                                           jpeg_quality, progressive)
+    
+                arcpy.AddMessage("JPEG is located: " + outfile)
+                return filename
+    
+            elif export == 'TIFF':
+                filename = filename_prefixe + map_doc_name  + ".tif"
+                outfile = os.path.join(outputdirectory, filename)
+    
+                # Export to JPEG optional parameters
+                data_frame = "PAGE_LAYOUT"
+                df_export_width = 640
+                df_export_height = 480
+                resolution = 96
+                world_file = False
+                color_mode = "24-BIT_TRUE_COLOR"
+                tiff_compression = "LZW"
+    
+                # Run the export tool
+                arcpy.mapping.ExportToTIFF(mxd, outfile, data_frame,
+                                           df_export_width, df_export_height,
+                                           resolution, world_file, color_mode,
+                                           tiff_compression)
+                arcpy.AddMessage("TIFF is located: " + outfile)
+                return filename
+    
+            elif export == "MAP PACKAGE":
+                filename = filename_prefixe + map_doc_name + ".mpk"
+                outfile = os.path.join(outputdirectory, filename)
+                dfextent = data_frame.extent
+                mxd = mxd.filePath
+                arcpy.AddMessage(mxd)
+    
+                # Export to MPK optional parameters
+                convert_data = "CONVERT"
+                convert_arcsde_data = "CONVERT_ARCSDE"
+                apply_extent_to_arcsde = "ALL"
+                arcgisruntime = "DESKTOP"
+                reference_all_data = "NOT_REFERENCED"
+                version = "ALL"
+    
+                # Run the export tool
+                arcpy.PackageMap_management(mxd, outfile, convert_data,
+                                            convert_arcsde_data, dfextent,
+                                            apply_extent_to_arcsde, arcgisruntime,
+                                            reference_all_data, version)
+                arcpy.AddMessage("MPK is located: " + outfile)
+                return filename
+    
+            elif export == 'LAYOUT GEOTIFF':
+                filename = filename_prefixe + map_doc_name  + ".tif"
+                outfile = os.path.join(outputdirectory, filename)
+    
+                # Export to Layout GeoTIFF optional parameters:
+                resolution = 96
+                world_file = False
+                color_mode = "24-BIT_TRUE_COLOR"
+                tiff_compression = "LZW"
+    
+                # Run the export tool
+                arcpyproduction.mapping.ExportToLayoutGeoTIFF(mxd, outfile,
+                                                              data_frame,
+                                                              resolution,
+                                                              world_file,
+                                                              color_mode,
+                                                              tiff_compression)
+                arcpy.AddMessage("Layout GeoTIFF is located: " + outfile)
+                return filename
+    
+            elif export == 'PRODUCTION PDF' or export == 'MULTI-PAGE PDF':
+                filename = filename_prefixe + map_doc_name  + ".pdf"
+                outfile = os.path.join(outputdirectory, filename)
+                setting_file = os.path.join(product_location, production_xml)
+    
+                if os.path.exists(setting_file) == True:
+                    arcpyproduction.mapping.ExportToProductionPDF(mxd, outfile,
+                                                                  setting_file)
+                    arcpy.AddMessage("Production PDF is located: " + outfile)
+                else:
+                    arcpy.AddMessage("Production PDF is the default exporter for a Multi-page PDF.")
+                    arcpy.AddWarning("Color mapping rules file doesn't exist, using "
+                                   "standard ExportToPDF exporter with default "
+                                   "settings.")
+                    arcpy.mapping.ExportToPDF(mxd, outfile)
+                    arcpy.AddMessage("PDF is located: " + outfile)
+                return filename
+    
+            else:
+                arcpy.AddError("The exporter : " + export + " is not supported, "
+                               "please contact your system administrator.")
+    
+        except arcpy.ExecuteError:
+            arcpy.AddError(arcpy.GetMessages(2))
+        except Exception as ex:
+            arcpy.AddError(ex.message)
+            tb = sys.exc_info()[2]
+            tbinfo = traceback.format_tb(tb)[0]
+            arcpy.AddError("Traceback info:\n" + tbinfo)      
+    
     def updateLayoutElements(self, layout_element_list, map_name, state_name, mapsheetname, mapseries, mapedition, mapsheet):
         """code to update the surround elements"""
         # Updates layout elements for final map
@@ -105,15 +369,19 @@ class MapGenerator(object):
         arcpy.AddMessage("Updating the Layout Surround Elements...")
         return
 
-    def execute(self, parameters, messages):
+    def createmap(self, product_json):
         """The source code of the tool."""
         import zipfile
+        #Path to the AGS Output Directory
+        self.outputdirectory = output_directory
+        # Path to MCS_POD's Product Location
+        self.shared_prod_path = shared_products_path        
 
         try:
             arcpy.env.overwriteOutput = True
 
             #Getting the Data and time
-            timestamp = CTM_Utilities.get_date_time()
+            timestamp = MapGenerator.get_date_time(self)
 
             #Paths to the ArcGIS Scratch workspaces
             scratch_workspace = arcpy.env.scratchGDB
@@ -123,10 +391,10 @@ class MapGenerator(object):
             arcpy.CheckOutExtension('foundation')
 
             # Gets the inputs and converts to a Python Object
-            product_json = parameters[0].value
+            #product_json = parameters[0].value
             product = json.loads(product_json)
-            product = CTM_Utilities.DictToObject(product)
-
+            product = DictToObject(product)
+            
             # Setting a working directory
             if "workingDirectory" in product.keys():
                 scratch_folder = product.workingDirectory
@@ -208,7 +476,7 @@ class MapGenerator(object):
                     exit(0)
 
             # Gets the largest data frame (page size not data frame extent)
-            data_frame = CTM_Utilities.get_largest_data_frame(final_mxd)
+            data_frame = MapGenerator.get_largest_data_frame(self, final_mxd)
 
             # Code to generate a Preview for the POD wed app
             if product.exportOption == 'Preview':
@@ -242,7 +510,7 @@ class MapGenerator(object):
                 preview_name = "_ags_" + map_doc_name + "_preview.jpg"
                 preview_path = os.path.join(self.outputdirectory, preview_name)
                 arcpy.mapping.ExportToJPEG(final_mxd, preview_path, resolution=96, jpeg_quality=50)
-                parameters[1].value = preview_name
+                return preview_name
 
             elif product.exportOption == 'Export':
                 #Variables required for the script
@@ -519,29 +787,32 @@ class MapGenerator(object):
 
                 arcpy.AddMessage("Finalizing the map document...")
                 data_frame = arcpy.mapping.ListDataFrames(final_mxd, "Layers")[0]
+                
 
                 # Export the Map to the selected format
+
                 if "productionPDFXML" in product.keys():
-                    file_name = CTM_Utilities.export_map_document(product_location, final_mxd,
+                    file_name = MapGenerator.export_map_document(self, product_location, final_mxd,
                                                                   map_doc_name, data_frame,
                                                                   self.outputdirectory, product.exporter, product.productionPDFXML)
                 else:
-                    file_name = CTM_Utilities.export_map_document(product_location, final_mxd,
+                    file_name = MapGenerator.export_map_document(self, product_location, final_mxd,
                                                                   map_doc_name, data_frame,
                                                                   self.outputdirectory, product.exporter)
-                parameters[1].value = file_name
+                arcpy.AddMessage("Map Done Map Generator.")
+                
 
-                if "keep_mxd_backup" in product.keys():
-                    arcpy.AddMessage("Keep mxd value is " + str(product.keep_mxd_backup))
-                    # Delete feature dataset created for grid (Option for Development)
-                    if product.keep_mxd_backup == False:
-                        arcpy.AddMessage("Cleaning up all the intermediate data.")
-                        arcpy.Delete_management(gfds)
-                        del final_mxd, grid, custom_aoi_layer, custom_aoi_lyr
-                        arcpy.Delete_management(final_mxd_path)
-                        arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
+                #if "keep_mxd_backup" in product.keys():
+                    #arcpy.AddMessage("Keep mxd value is " + str(product.keep_mxd_backup))
+                    ## Delete feature dataset created for grid (Option for Development)
+                    #if product.keep_mxd_backup == False:
+                        #arcpy.AddMessage("Cleaning up all the intermediate data.")
+                        #arcpy.Delete_management(gfds)
+                        #del final_mxd, grid, custom_aoi_layer, custom_aoi_lyr
+                        #arcpy.Delete_management(final_mxd_path)
+                        #arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
 
-            return
+                return file_name
 
         except arcpy.ExecuteError:
             arcpy.AddError(arcpy.GetMessages(2))
@@ -560,9 +831,9 @@ class DesktopGateway(object):
         self.canRunInBackground = False
 
         #Path to the AGS Output Directory
-        self.outputdirectory = CTM_Utilities.output_directory
+        self.outputdirectory = output_directory
         # Path to MCS_POD's Product Location
-        self.shared_prod_path = CTM_Utilities.shared_products_path
+        self.shared_prod_path = shared_products_path
 
     def getParameterInfo(self):
         """Define parameter definitions"""
@@ -706,7 +977,7 @@ class DesktopGateway(object):
 
             # Getting output location from CTM_Utilities
             if working_directory == "":
-                output_location = CTM_Utilities.output_directory
+                output_location = output_directory
             else:
                 output_location = str(working_directory)
 
@@ -744,7 +1015,10 @@ class DesktopGateway(object):
             # Creates a Map Book for the multi-page PDFs
             map_book_name = ""
             if multi_page_pdf_list != []:
-                map_book_name = "MultipagePDF_" + str(CTM_Utilities.get_date_time()) + ".pdf"
+
+                MapGenerator_class = MapGenerator()
+                time_stamp_method = getattr(MapGenerator_class, 'get_date_time')               
+                map_book_name = "MultipagePDF_" + str(time_stamp_method()) + ".pdf"
                 map_book_path = os.path.join(output_location, map_book_name)
 
                 # Create the file and append pages
@@ -778,7 +1052,7 @@ class DesktopGateway(object):
 # comment out when running in ArcMap
 #def main():
     ##g = DesktopGateway()
-    #g = MapGenerator()
+    #g = MapGenerator_50K()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
