@@ -1,4 +1,4 @@
-###| Copyright 2016 Esri
+###| Copyright 2014 Esri
 ###|
 ###| Licensed under the Apache License, Version 2.0 (the "License");
 ###| you may not use this file except in compliance with the License.
@@ -19,17 +19,18 @@ import os
 import sys
 import shutil
 import zipfile
-import arcpywmx
 import datetime
+import arcpywmx
 
+# Global Variables
+extended_propert_table = "CTM_WMX_DEVELOPMENT.DBO.JTX_EXT_JOB_REPLICA"
 
-extended_propert_table = "CTM_WMX.DBO.JTX_EXT_JOB_REPLICA"
-
-class Utilities(object):
+class Utilities_WMX(object):
     
     # Logic to update the extended property values for WMX Jobs
     def update_extended_properties(self, job_id, extended_property_field, field_value):
         arcpy.CheckOutExtension('JTX')
+        arcpy.AddMessage("Updating the job extended properties.")
             
         wmx_connection = arcpywmx.Connect()
         job = wmx_connection.getJob(int(job_id))
@@ -84,9 +85,9 @@ class CreateReplicaFileGDB(object):
                                          direction="Input",
                                          datatype="GPBoolean",
                                          parameterType="Optional")
-        input_job_id.value = 6
-        job_direcotry.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_6"
-        contractor_job.value = True
+        #input_job_id.value = 6
+        #job_direcotry.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_6"
+        #contractor_job.value = True
         params = [input_job_id, job_direcotry, contractor_job]
         return params
 
@@ -154,8 +155,7 @@ class CreateReplicaFileGDB(object):
             result = arcpy.CreateReplica_production(replica_item_list, 'CHECKOUT', str(replica_file_gdb), "Replica_" + str(input_job_id), 'DO_NOT_REUSE', 'FILTER_BY_GEOMETRY', 'INTERSECTS', aoi, 'FULL', 'NO_ARCHIVING', '#')
             arcpy.AddMessage(result.getMessages())
 
-            utilities_class = Utilities()
-            update_extended_properties_method = getattr(utilities_class, 'update_extended_properties')
+            utilities_class = Utilities_WMX()           
 
             if contractor_job == True:
                 arcpy.AddMessage("Zipping the Replica File Geodatabase for the contractor.")
@@ -173,7 +173,7 @@ class CreateReplicaFileGDB(object):
                 arcpy.AddMessage("Replica Zipped File has been attached to the job.")
 
             else:
-                update_extended_properties_method(input_job_id, "JOBREPLICA", os.path.join(parent_job_direcotry, file_gdb_name + ".gdb"))                
+                utilities_class.update_extended_properties(input_job_id, "JOBREPLICA", os.path.join(parent_job_direcotry, file_gdb_name + ".gdb"))                
             return
 
         except arcpy.ExecuteError:
@@ -330,12 +330,11 @@ class UpdateAOIDate(object):
             job_type = parameters[2].value
             #workspace = parameters[3].value
             
-            utilities_class = Utilities()
-            update_aoi_date_method = getattr(utilities_class, 'get_geodatabase_path')            
-            
+            utilities_class = Utilities_WMX()
+
             aoi_index_layer_path = arcpy.Describe(aoi_index_layer).path
             
-            workspace = update_aoi_date_method(aoi_index_layer_path)
+            workspace = utilities_class.get_geodatabase_path(aoi_index_layer_path)
 
             job_aoi_layer = "AOILayer_Job" + input_job_id
             aoi_feature_layer = "aoi_feature_layer"
@@ -417,9 +416,9 @@ class ResourceMXD(object):
                                     datatype="DEWorkspace",
                                     parameterType="Required")
 
-        #input_job_id.value = 408
-        #job_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_408"
-        #workspace.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_408\Job_408_Replica.gdb"
+        #input_job_id.value = 6
+        #job_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_6"
+        #workspace.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_6\Job_6_Replica.gdb"
         
         params = [input_job_id, job_folder, workspace]
         return params
@@ -580,150 +579,6 @@ class ExportMapDocumment(object):
         except Exception as ex:
             arcpy.AddError("Unexpected Error: " + ex.message)
 
-#class ExecuteDataReviewBatchJob(object):
-    #""" Class that contains the code to generate a new map based off the input aoi"""
-
-    #def __init__(self):
-        #"""Define the tool (tool name is the name of the class)."""
-        #self.label = "Workflow Manager Execute Data Review Batch Job"
-        #self.description = "Workflow Manager Execute Data Review Batch Job"
-        #self.canRunInBackground = False
-
-    #def getParameterInfo(self):
-        #"""Define parameter definitions"""
-        #reviewer_ws = arcpy.Parameter(name="reviewer_ws",
-                                      #displayName="Reviewer Workspace",
-                                      #direction="Input",
-                                      #datatype="DEWorkspace",
-                                      #parameterType="Required")
-        #session = arcpy.Parameter(name="session",
-                                  #displayName="Reviewer Session",
-                                  #direction="Input",
-                                  #datatype="GPString",
-                                  #parameterType="Required")
-        #batch_job_file = arcpy.Parameter(name="batch_job_file",
-                                         #displayName="Batch Job File",
-                                         #direction="Input",
-                                         #datatype="DEFile",
-                                         #parameterType="Required", 
-                                         #multiValue=True)
-        #production_ws = arcpy.Parameter(name="production_ws",
-                                        #displayName="Production Workspace",
-                                        #direction="Input",
-                                        #datatype="DEWorkspace",
-                                        #parameterType="Required")
-        #input_job_id = arcpy.Parameter(name="input_job_id",
-                                       #displayName="Input WMX Job ID",
-                                       #direction="Input",
-                                       #datatype="GPLong",
-                                       #parameterType="Required")        
-        #result = arcpy.Parameter(name="result",
-                                 #displayName="Result",
-                                 #direction="Output",
-                                 #datatype="GPString",
-                                 #parameterType="Derived")
-        ##reviewer_ws.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_CTM_WMX_Utilities\CTM_DR.sde"
-        ##session.value = "Session 11 : Session 11"
-        ##batch_job_file.value = [r"C:\Data\MCS_POD\Fixed25K\BatchJobs\CTM_Spatial_Checks\CTM_Cutbacks_Line_Check.rbj", r"C:\Data\MCS_POD\Fixed25K\BatchJobs\CTM_Spatial_Checks\CTM_Cutbacks_Polygon_Check.rbj", r"C:\Data\MCS_POD\Fixed25K\BatchJobs\CTM_Spatial_Checks\CTM_Duplicate_Geometry_Check.rbj"]
-        ##production_ws.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\SaltLakeCity.gdb"
-        ##input_job_id.value = 4001
-
-        #params = [reviewer_ws, session, batch_job_file, production_ws, input_job_id, result]
-        #return params
-
-    #def isLicensed(self):
-        #"""Set whether tool is licensed to execute."""
-        #if arcpy.CheckExtension("datareviewer") == "Available":
-            #return True
-        #return False
-
-    #def updateParameters(self, parameters):
-        #"""Modify the values and properties of parameters before internal
-        #validation is performed.  This method is called whenever a parameter
-        #has been changed."""
-        #return
-
-    #def updateMessages(self, parameters):
-        #"""Modify the messages created by internal validation for each tool
-        #parameter.  This method is called after internal validation."""
-        #return
-
-    #def execute(self, parameters, messages):
-        #"""The source code of the tool."""
-        #try:
-            #arcpy.CheckOutExtension("datareviewer")
-            #arcpy.CheckOutExtension("JTX")
-            #arcpy.env.overwriteOutput = True
-
-            #reviewer_ws = parameters[0].value
-            #session = parameters[1].value
-            #batch_job_file_list = parameters[2].value
-            
-            #arcpy.AddMessage(str(batch_job_file_list))
-            #production_ws = parameters[3].value
-            #input_job_id = str(parameters[4].value)
-
-            #arcpy.env.workspace = reviewer_ws
-            #tablelist = arcpy.ListTables()
-            #rev_table_mian_lyr = None
-            #rbj_result = None
-
-            #session_id = session.split(" ")[1]
-
-            #for table in tablelist:
-                #t = table.split(".")
-                #lenght = len(t)
-                #if t[(lenght -1)].upper() == "REVTABLEMAIN":
-                    #rev_table_mian_lyr = arcpy.MakeTableView_management(table, r"in_memory\rev_table_main_lyr")
-                    #break
-
-            #table_selection = arcpy.SelectLayerByAttribute_management(rev_table_mian_lyr, "NEW_SELECTION", "SESSIONID = " + session_id)
-            #inital_count = int(arcpy.GetCount_management(table_selection).getOutput(0))
-            #arcpy.AddMessage("Initial Count is: " + str(inital_count))
-            #table_selection = arcpy.SelectLayerByAttribute_management(rev_table_mian_lyr, "CLEAR_SELECTION")
-            #arcpy.AddMessage("Selection has been cleared.")
-            
-            #job_aoi_layer = "AOILayer_Job" + input_job_id
-            #aoi = arcpy.GetJobAOI_wmx(input_job_id, job_aoi_layer, "")
-                            
-            #for i in range(0, batch_job_file_list.rowCount):
-                #batch_job_file = batch_job_file_list.getRow(i)
-                #arcpy.AddMessage("Running RBJ file: " + str(batch_job_file))
-                #result_table = arcpy.ExecuteReviewerBatchJob_Reviewer(reviewer_ws, session, batch_job_file.strip("'"), production_ws, aoi)
-                #arcpy.AddMessage(result_table.getMessages())
-
-            #table_selection = arcpy.SelectLayerByAttribute_management(rev_table_mian_lyr, "NEW_SELECTION", "SESSIONID = " + session_id)
-            #final_count = int(arcpy.GetCount_management(table_selection).getOutput(0))
-            #arcpy.AddMessage("Final Count is: " +  str(final_count))
-
-            #with arcpy.da.SearchCursor(result_table, ["STATUS"]) as scur:
-                #for row in scur:
-                    #rbj_result = row[0]
-            #arcpy.AddMessage("Batch Job Result is: " + str(rbj_result))
-
-            #if rbj_result == 0 and (inital_count == final_count):
-                #parameters[5].value = 0
-                #arcpy.AddMessage("Batch job executed successfully, and no results were returned.")
-            #elif rbj_result == 0 and (final_count > inital_count):
-                #parameters[5].value = 1
-                #arcpy.AddMessage("Batch job executed successfully, and results were written to the Reviewer session.")
-            #elif rbj_result == 4:
-                #parameters[5].value = 2
-                #arcpy.AddMessage("Batch job failed to execute.")
-            #elif (rbj_result == 1 or rbj_result == 2 or rbj_result == 3) and (inital_count == final_count):
-                #parameters[5].value = 3
-                #arcpy.AddMessage("Batch job executed successfully with errors or warnings, and no results were returned. ")
-            #elif (rbj_result == 1 or rbj_result == 2 or rbj_result == 3) and (final_count > inital_count):
-                #parameters[5].value = 4
-                #arcpy.AddMessage("Batch job executed successfully with errors or warnings, and results were written to the Reviewer session.")
-            #return
-
-        #except arcpy.ExecuteError:
-            #arcpy.AddError(arcpy.GetMessages(2))
-        #except SystemError:
-            #arcpy.AddError("System Error: " + sys.exc_info()[0])
-        #except Exception as ex:
-            #arcpy.AddError("Unexpected Error: " + ex.message)
 
 class CreateJobFolder(object):
     """ Class that contains the code to generate a new map based off the input aoi"""
@@ -749,7 +604,7 @@ class CreateJobFolder(object):
                                  parameterType="Required")
 
         #parent_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store"
-        #job_id.value = 3
+        #job_id.value = 1
 
         params = [parent_folder, job_id]
         return params
@@ -780,14 +635,18 @@ class CreateJobFolder(object):
             
             if arcpy.Exists(parent_folder) != True:
                 arcpy.AddError(parent_folder + " doesn't exist")
-                raise arcpy.ExecuteError            
-
-            arcpy.CreateFolder_management(parent_folder, job_folder_name)
+                raise arcpy.ExecuteError    
+            elif arcpy.Exists(os.path.join(parent_folder.value, job_folder_name)) == True:
+                arcpy.AddWarning("Job folder " + job_folder_name + " already eixsts in " + str(parent_folder.value) + ".")
+                arcpy.AddWarning("Using the job folder that already exists.")
+            else:
+                arcpy.AddMessage("Creating the job folder: " + str(job_folder_name))
+                arcpy.CreateFolder_management(parent_folder, job_folder_name)
+            
             job_folder = os.path.join(parent_folder.value, job_folder_name)
             
-            utilities_class = Utilities()
-            update_extended_properties_method = getattr(utilities_class, 'update_extended_properties')
-            update_extended_properties_method(job_id, "JOBFOLDER", job_folder)
+            utilities_class = Utilities_WMX()
+            utilities_class.update_extended_properties(job_id, "JOBFOLDER", job_folder)
             return
 
         except arcpy.ExecuteError:
@@ -824,9 +683,9 @@ class IncreaseReviewLoopCount(object):
                           datatype="GPString",
                           parameterType="Required")
         
-        input_job_id.value = 12
-        session_id.value = 2807
-        reviewer_ws.value = r"C:\Data\MCS_POD\WorkflowManager\Database Configuration\CTM_DataReviewer.sde"
+        #input_job_id.value = 12
+        #session_id.value = 2807
+        #reviewer_ws.value = r"C:\Data\MCS_POD\WorkflowManager\Database Configuration\CTM_DataReviewer.sde"
         
         params = [input_job_id, reviewer_ws, session_id]
         return params
@@ -915,10 +774,10 @@ class IncreaseReviewLoopCount(object):
 
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
-def main():
-    g = IncreaseReviewLoopCount()
-    par = g.getParameterInfo()
-    g.execute(par, None)
+#def main():
+    #g = CreateJobFolder()
+    #par = g.getParameterInfo()
+    #g.execute(par, None)
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+    #main()
