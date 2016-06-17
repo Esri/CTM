@@ -594,7 +594,7 @@ class CreateJobFolder(object):
         parent_folder = arcpy.Parameter(name="parent_folder",
                                         displayName="Parent Folder",
                                         direction="Input",
-                                        datatype="DEFolder",
+                                        datatype="GPString",
                                         parameterType="Required")
 
         job_id = arcpy.Parameter(name="job_id",
@@ -603,8 +603,8 @@ class CreateJobFolder(object):
                                  datatype="GPString",
                                  parameterType="Required")
 
-        #parent_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store"
-        #job_id.value = 1
+        parent_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store"
+        job_id.value = 1
 
         params = [parent_folder, job_id]
         return params
@@ -634,8 +634,11 @@ class CreateJobFolder(object):
             job_folder_name = "WMX_JOB_" + job_id
             
             if arcpy.Exists(parent_folder) != True:
-                arcpy.AddError(parent_folder + " doesn't exist")
-                raise arcpy.ExecuteError    
+                arcpy.AddWarning(parent_folder + " doesn't exist, the WMX_Store folder will be created.")
+                parent_directory = os.path.dirname(parent_folder)
+                arcpy.CreateFolder_management(parent_directory, "WMX_Store")
+                arcpy.CreateFolder_management(parent_folder, job_folder_name)
+    
             elif arcpy.Exists(os.path.join(parent_folder.value, job_folder_name)) == True:
                 arcpy.AddWarning("Job folder " + job_folder_name + " already eixsts in " + str(parent_folder.value) + ".")
                 arcpy.AddWarning("Using the job folder that already exists.")
@@ -643,7 +646,7 @@ class CreateJobFolder(object):
                 arcpy.AddMessage("Creating the job folder: " + str(job_folder_name))
                 arcpy.CreateFolder_management(parent_folder, job_folder_name)
             
-            job_folder = os.path.join(parent_folder.value, job_folder_name)
+            job_folder = os.path.join(parent_folder, job_folder_name)
             
             utilities_class = Utilities_WMX()
             utilities_class.update_extended_properties(job_id, "JOBFOLDER", job_folder)
