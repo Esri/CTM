@@ -23,7 +23,7 @@ import datetime
 import arcpywmx
 
 # Global Variables
-extended_propert_table = "CTM_WMX_DEVELOPMENT.DBO.JTX_EXT_JOB_REPLICA"
+extended_propert_table = "CTM_WMX_DEVELOPMENT.DBO.CTM_EXT_JOB_REPLICA"
 
 class Utilities_WMX(object):
     
@@ -603,8 +603,8 @@ class CreateJobFolder(object):
                                  datatype="GPString",
                                  parameterType="Required")
 
-        parent_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store"
-        job_id.value = 1
+        #parent_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store"
+        #job_id.value = 1
 
         params = [parent_folder, job_id]
         return params
@@ -639,8 +639,8 @@ class CreateJobFolder(object):
                 arcpy.CreateFolder_management(parent_directory, "WMX_Store")
                 arcpy.CreateFolder_management(parent_folder, job_folder_name)
     
-            elif arcpy.Exists(os.path.join(parent_folder.value, job_folder_name)) == True:
-                arcpy.AddWarning("Job folder " + job_folder_name + " already eixsts in " + str(parent_folder.value) + ".")
+            elif arcpy.Exists(os.path.join(parent_folder, job_folder_name)) == True:
+                arcpy.AddWarning("Job folder " + job_folder_name + " already eixsts in " + str(parent_folder) + ".")
                 arcpy.AddWarning("Using the job folder that already exists.")
             else:
                 arcpy.AddMessage("Creating the job folder: " + str(job_folder_name))
@@ -686,8 +686,8 @@ class IncreaseReviewLoopCount(object):
                           datatype="GPString",
                           parameterType="Required")
         
-        #input_job_id.value = 12
-        #session_id.value = 2807
+        #input_job_id.value = 21
+        #session_id.value = 5609
         #reviewer_ws.value = r"C:\Data\MCS_POD\WorkflowManager\Database Configuration\CTM_DataReviewer.sde"
         
         params = [input_job_id, reviewer_ws, session_id]
@@ -719,8 +719,12 @@ class IncreaseReviewLoopCount(object):
             job = wmx_connection.getJob(int(job_id))
             extended_property_table = job.getExtendedPropertyTable(extended_propert_table)
             extended_property_field = 'REVCNT'
+            data_reviewer_loop_count = None
             data_reviewer_loop_count = extended_property_table[extended_property_field].data
-            data_reviewer_loop_count = data_reviewer_loop_count + 1
+            if data_reviewer_loop_count != None:
+                data_reviewer_loop_count = data_reviewer_loop_count + 1
+            else:
+                data_reviewer_loop_count = 1
             extended_property_table[extended_property_field].data = data_reviewer_loop_count
             job.save()
             
@@ -777,10 +781,10 @@ class IncreaseReviewLoopCount(object):
 
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
-#def main():
-    #g = CreateJobFolder()
-    #par = g.getParameterInfo()
-    #g.execute(par, None)
+def main():
+    g = IncreaseReviewLoopCount()
+    par = g.getParameterInfo()
+    g.execute(par, None)
 
-#if __name__ == '__main__':
-    #main()
+if __name__ == '__main__':
+    main()
