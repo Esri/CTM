@@ -1,0 +1,1 @@
+This folder will be used as the Workflow Manager Job Data Store.
