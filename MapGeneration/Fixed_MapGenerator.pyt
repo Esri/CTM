@@ -20,7 +20,7 @@ import os
 import sys
 import json
 import shutil
-#import CTM_Utilities
+import datetime
 
 # Global Variables:
 
@@ -65,7 +65,7 @@ class MapGenerator_25K(object):
                                       parameterType="Derived")
 
         # For Debugging and testing
-        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_25K","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453868.023369277,4938869.1756399116],[-12446910.558979558,4938869.1756399116],[-12439953.094812483,4938869.1756399116],[-12439953.094812483,4929723.7623885619],[-12439953.094812483,4920586.8467766969],[-12446910.558979558,4920586.28025827],[-12453868.023369277,4920586.8467766969],[-12453868.023369277,4929723.7623885619],[-12453868.023369277,4938869.1756399116]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","mapSheetName":"Lehi ","customName":""}'
+        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_25K","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453868.023369277,4957185.0579098556],[-12446910.558979558,4957185.6017564684],[-12439953.094812483,4957185.6017564684],[-12439953.094812483,4948023.1131076179],[-12439953.094812483,4938869.1756399116],[-12446910.558979558,4938869.1756399116],[-12453868.023369277,4938869.1756399116],[-12453868.023369277,4948023.1131076179],[-12453868.023369277,4957185.0579098556]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":false,"mapSheetName":"Draper ","customName":""}'
         params = [product_as_json, output_file]
         return params
 
@@ -125,7 +125,7 @@ class MapGenerator_50K(object):
                                       parameterType="Derived")
 
         # For Debugging and testing
-        #product_as_json.value = '{"productName":"Fixed 50K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator50K","mxd":"CTM50KTemplate.mxd","gridXml":"CTM_50K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12439953.094701165,4920586.8467766969],[-12446910.559090884,4920586.28025827],[-12453868.023369277,4920586.8467766969],[-12453868.023369277,4929723.7623885619],[-12453868.023369277,4938869.1754935188],[-12453868.023369277,4948023.1131076179],[-12453868.023369277,4957185.0579098556],[-12446910.559090884,4957185.601903135],[-12439953.094701165,4957185.601903135],[-12432995.630311446,4957185.601903135],[-12426038.166033052,4957185.601903135],[-12426038.166033052,4948023.1131076179],[-12426038.166033052,4938869.1754935188],[-12426038.166033052,4929723.7623885619],[-12426038.166033052,4920586.8467766969],[-12432995.630311446,4920586.8467766969],[-12439953.094701165,4920586.8467766969]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","mapSheetName":"Draper","customName":""}'
+        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_25K","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453868.023369277,4957185.0579098556],[-12446910.558979558,4957185.6017564684],[-12439953.094812483,4957185.6017564684],[-12439953.094812483,4948023.1131076179],[-12439953.094812483,4938869.1756399116],[-12446910.558979558,4938869.1756399116],[-12453868.023369277,4938869.1756399116],[-12453868.023369277,4948023.1131076179],[-12453868.023369277,4957185.0579098556]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":false,"mapSheetName":"Draper ","customName":""}'
         params = [product_as_json, output_file]
         return params
 
@@ -152,7 +152,7 @@ class MapGenerator_50K(object):
         map_generator_class = MapGenerator()
         create_map_method = getattr(map_generator_class, 'createmap')
         outfile = create_map_method(product_json)
-        parameters[1].value = outfile        
+        parameters[1].value = outfile
         return
 
     
@@ -391,7 +391,6 @@ class MapGenerator(object):
             arcpy.CheckOutExtension('foundation')
 
             # Gets the inputs and converts to a Python Object
-            #product_json = parameters[0].value
             product = json.loads(product_json)
             product = DictToObject(product)
             
@@ -440,15 +439,16 @@ class MapGenerator(object):
             map_doc_name = map_name + "_" + timestamp
             arcpy.AddMessage("Creating the map for the " + map_name + " aoi...")
 
+            final_mxd = None
             # Gets the mxd object
             # Creates the AOI specific mxd in the scratch location, if keeping backup copies
-            if "keep_mxd_backup" in product.keys():
-                if product.keep_mxd_backup == True:
-                    final_mxd_path = os.path.join(scratch_folder, map_doc_name + ".mxd")
-                    arcpy.AddMessage("MXD path is: " + final_mxd_path)
-                    shutil.copy(mxd_path, final_mxd_path)
-                    del mxd_path
-                    final_mxd = arcpy.mapping.MapDocument(final_mxd_path)
+            if "keep_mxd_backup" in product.keys() and product.keep_mxd_backup == True:
+                final_mxd_path = os.path.join(scratch_folder, map_doc_name + ".mxd")
+                arcpy.AddMessage("MXD path is: " + final_mxd_path)
+                shutil.copy(mxd_path, final_mxd_path)
+                del mxd_path
+                final_mxd = arcpy.mapping.MapDocument(final_mxd_path)
+                
             else:
                 #Creates the mxd object from the template mxd, if not saving backup copies
                 final_mxd = arcpy.mapping.MapDocument(mxd_path)
@@ -761,23 +761,24 @@ class MapGenerator(object):
                 map_series = None
                 map_edition = None
                 map_sheet = None
-                with arcpy.da.SearchCursor(map_aoi_layer, ["SHAPE@", "SHEET", "SERIES", "EDITION"]) as s_cursor:
-                    for row in s_cursor:
-                        map_aoi_geo = row[0]
-                        map_sheet = row[1]
-                        map_series = row[2]
-                        map_edition = row[3]
-                        if map_aoi_geo.equals((arcpy.AsShape(json.dumps(product.geometry), True)).projectAs(grid.baseSpatialReference.GCS)) == True:
-                            aoi_count = aoi_count + 1
-
-                if aoi_count <> 1:
+                
+                arcpy.SelectLayerByLocation_management(map_aoi_layer, "WITHIN", custom_aoi_fc, '#', 'NEW_SELECTION', 'NOT_INVERT')
+                # Sets the Map Sheet information
+                if int((arcpy.GetCount_management(map_aoi_layer)).getOutput(0)) != 1:
+                    # More than 1 quad = a Custom Extent
                     map_series = "Custom Extent"
                     map_edition = "Custom Extent"
                     map_sheet = "Custom Extent"
+                else:
+                    # Gets the Map Sheet information for the selected quad
+                    with arcpy.da.SearchCursor(map_aoi_layer, ["SHEET", "SERIES", "EDITION"]) as s_cursor:
+                        for row in s_cursor:
+                            map_sheet = row[0]
+                            map_series = row[1]
+                            map_edition = row[2]
+                    
                 # Updating the Surround Elements
-
                 MapGenerator.updateLayoutElements(self, layout_elements, map_name, state_name, product.mapSheetName, map_series, map_edition, map_sheet)
-
                 arcpy.RefreshActiveView()
                 arcpy.RefreshTOC()
 
@@ -798,19 +799,18 @@ class MapGenerator(object):
                 else:
                     file_name = MapGenerator.export_map_document(self, product_location, final_mxd,
                                                                   map_doc_name, data_frame,
-                                                                  self.outputdirectory, product.exporter)
-                arcpy.AddMessage("Map Done Map Generator.")
+                                                                  self.outputdirectory, product.exporter) 
                 
 
-                #if "keep_mxd_backup" in product.keys():
-                    #arcpy.AddMessage("Keep mxd value is " + str(product.keep_mxd_backup))
-                    ## Delete feature dataset created for grid (Option for Development)
-                    #if product.keep_mxd_backup == False:
-                        #arcpy.AddMessage("Cleaning up all the intermediate data.")
-                        #arcpy.Delete_management(gfds)
-                        #del final_mxd, grid, custom_aoi_layer, custom_aoi_lyr
-                        #arcpy.Delete_management(final_mxd_path)
-                        #arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
+                if "keep_mxd_backup" in product.keys():
+                    arcpy.AddMessage("Keep mxd value is " + str(product.keep_mxd_backup))
+                    # Delete feature dataset created for grid (Option for Development)
+                    if product.keep_mxd_backup == False:
+                        arcpy.AddMessage("Cleaning up all the intermediate data.")
+                        arcpy.Delete_management(gfds)
+                        del final_mxd, grid, custom_aoi_layer, custom_aoi_lyr
+                        arcpy.Delete_management(final_mxd_path)
+                        arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
 
                 return file_name
 
@@ -1052,7 +1052,7 @@ class DesktopGateway(object):
 # comment out when running in ArcMap
 #def main():
     ##g = DesktopGateway()
-    #g = MapGenerator_50K()
+    #g = MapGenerator_25K()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
