@@ -23,7 +23,7 @@ import datetime
 import arcpywmx
 
 # Global Variables
-extended_propert_table = "CTM_WMX_DEVELOPMENT.DBO.CTM_EXT_JOB_REPLICA"
+extended_propert_table = "CTM_WMX_Development.DBO.CTM_EXT_JOB_REPLICA"
 
 class Utilities_WMX(object):
     
@@ -75,8 +75,8 @@ class CreateReplicaFileGDB(object):
                                        direction="Input",
                                        datatype="GPLong",
                                        parameterType="Required")
-        job_direcotry = arcpy.Parameter(name="job_direcotry",
-                                               displayName="Job Direcotry",
+        job_directory = arcpy.Parameter(name="job_directory",
+                                               displayName="Job Directory",
                                                direction="Input",
                                                datatype="DEFolder",
                                                parameterType="Required")
@@ -85,10 +85,10 @@ class CreateReplicaFileGDB(object):
                                          direction="Input",
                                          datatype="GPBoolean",
                                          parameterType="Optional")
-        #input_job_id.value = 6
-        #job_direcotry.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_6"
-        #contractor_job.value = True
-        params = [input_job_id, job_direcotry, contractor_job]
+        #input_job_id.value = 2015
+        #job_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_2015"
+        #contractor_job.value = False
+        params = [input_job_id, job_directory, contractor_job]
         return params
 
     def isLicensed(self):
@@ -117,7 +117,7 @@ class CreateReplicaFileGDB(object):
             scratch_folder = arcpy.env.scratchFolder
 
             input_job_id = str(parameters[0].value)
-            parent_job_direcotry = str(parameters[1].value)
+            parent_job_directory = str(parameters[1].value)
             contractor_job = parameters[2].value
 
             file_gdb_name = "Job_" + input_job_id + "_Replica"
@@ -146,7 +146,7 @@ class CreateReplicaFileGDB(object):
                 for fc in fc_list:
                     replica_item_list = replica_item_list + str(parent_workspace) + "//" + str(fc) + " USE_FILTERS" + ";"
             arcpy.AddMessage("Creating the File Geodatabase for the Check Out Replica.")
-            replica_file_gdb = arcpy.CreateFileGDB_management(parent_job_direcotry, file_gdb_name, "CURRENT")
+            replica_file_gdb = arcpy.CreateFileGDB_management(parent_job_directory, file_gdb_name, "CURRENT")
 
             arcpy.AddMessage("Getting the JOB AOI feature.")
             aoi = arcpy.GetJobAOI_wmx(input_job_id, job_aoi_layer, "")
@@ -159,13 +159,13 @@ class CreateReplicaFileGDB(object):
 
             if contractor_job == True:
                 arcpy.AddMessage("Zipping the Replica File Geodatabase for the contractor.")
-                zip_file_name = os.path.join(parent_job_direcotry, file_gdb_name + ".gdb" + ".zip")
+                zip_file_name = os.path.join(parent_job_directory, file_gdb_name + ".gdb" + ".zip")
                 zfile = zipfile.ZipFile(zip_file_name, 'a')
                 for root, dirs, files in os.walk(str(replica_file_gdb)):
                     for f in files:
                         zfile.write(os.path.join(root, f), f)
                 zfile.close()
-                shutil.rmtree(os.path.join(parent_job_direcotry, file_gdb_name + ".gdb"))
+                shutil.rmtree(os.path.join(parent_job_directory, file_gdb_name + ".gdb"))
                 
                 wmx_connection = arcpywmx.Connect()
                 job = wmx_connection.getJob(int(input_job_id))  
@@ -173,7 +173,9 @@ class CreateReplicaFileGDB(object):
                 arcpy.AddMessage("Replica Zipped File has been attached to the job.")
 
             else:
-                utilities_class.update_extended_properties(input_job_id, "JOBREPLICA", os.path.join(parent_job_direcotry, file_gdb_name + ".gdb"))                
+                utilities_class.update_extended_properties(input_job_id, "JOBREPLICA", os.path.join(parent_job_directory, file_gdb_name + ".gdb"))   
+                utilities_class.update_extended_properties(input_job_id, "SDE_REPLICA", int(1))                
+                
             return
 
         except arcpy.ExecuteError:
@@ -604,7 +606,7 @@ class CreateJobFolder(object):
                                  parameterType="Required")
 
         #parent_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store"
-        #job_id.value = 1
+        #job_id.value = 1603
 
         params = [parent_folder, job_id]
         return params
@@ -715,6 +717,8 @@ class IncreaseReviewLoopCount(object):
             
             #Updating the Extending property for the Job
             job_id = parameters[0].value
+            
+            
             wmx_connection = arcpywmx.Connect()
             job = wmx_connection.getJob(int(job_id))
             extended_property_table = job.getExtendedPropertyTable(extended_propert_table)
@@ -781,10 +785,10 @@ class IncreaseReviewLoopCount(object):
 
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
-def main():
-    g = IncreaseReviewLoopCount()
-    par = g.getParameterInfo()
-    g.execute(par, None)
+#def main():
+    #g = CreateReplicaFileGDB()
+    #par = g.getParameterInfo()
+    #g.execute(par, None)
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+    #main()
