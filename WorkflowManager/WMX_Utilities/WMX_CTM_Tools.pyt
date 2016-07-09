@@ -57,7 +57,7 @@ class Toolbox(object):
         self.label = "Fixed 25K Tools"
         self.alias = "fixed25kTools"
         # List of tool classes associated with this toolbox
-        self.tools = [CreateReplicaFileGDB, ReconcileAndPost, UpdateAOIDate, ResourceMXD, ExportMapDocumment, CreateJobFolder, IncreaseReviewLoopCount]
+        self.tools = [CreateReplicaFileGDB, ReconcileAndPost, UpdateAOIDate, ResourceMXD, ExportMapDocumment, CreateJobFolder, IncreaseReviewLoopCount, CreateDataReviewerDatabase]
 
 class CreateReplicaFileGDB(object):
     """ Class that contains the code to generate a new map based off the input aoi"""
@@ -85,9 +85,9 @@ class CreateReplicaFileGDB(object):
                                          direction="Input",
                                          datatype="GPBoolean",
                                          parameterType="Optional")
-        #input_job_id.value = 2015
-        #job_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_2015"
-        #contractor_job.value = False
+        #input_job_id.value = 2031
+        #job_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_2031"
+        #contractor_job.value = True
         params = [input_job_id, job_directory, contractor_job]
         return params
 
@@ -158,6 +158,11 @@ class CreateReplicaFileGDB(object):
             utilities_class = Utilities_WMX()           
 
             if contractor_job == True:
+                arcpy.AddMessage("Coping the JOB AOI into the Replica Database.")
+                
+                output_fc = os.path.join(str(replica_file_gdb), "Job_AOI")
+                arcpy.CopyFeatures_management(aoi, output_fc)
+                
                 arcpy.AddMessage("Zipping the Replica File Geodatabase for the contractor.")
                 zip_file_name = os.path.join(parent_job_directory, file_gdb_name + ".gdb" + ".zip")
                 zfile = zipfile.ZipFile(zip_file_name, 'a')
@@ -172,9 +177,9 @@ class CreateReplicaFileGDB(object):
                 job.addAttachment('EMBEDDED', zip_file_name)
                 arcpy.AddMessage("Replica Zipped File has been attached to the job.")
 
-            else:
-                utilities_class.update_extended_properties(input_job_id, "JOBREPLICA", os.path.join(parent_job_directory, file_gdb_name + ".gdb"))   
-                utilities_class.update_extended_properties(input_job_id, "SDE_REPLICA", int(1))                
+            arcpy.AddMessage("Updating the Job's extended properties.")
+            utilities_class.update_extended_properties(input_job_id, "JOBREPLICA", os.path.join(parent_job_directory, file_gdb_name + ".gdb"))   
+            utilities_class.update_extended_properties(input_job_id, "SDE_REPLICA", int(1))                
                 
             return
 
@@ -782,11 +787,86 @@ class IncreaseReviewLoopCount(object):
         except Exception as ex:
             arcpy.AddError("Unexpected Error: " + ex.message)
             
+class CreateDataReviewerDatabase(object):
+    """ Class that contains the code to generate a new map based off the input aoi"""
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Create Data Reviewer Database"
+        self.description = "Creates and Enables a new File Geodatabase as a Data Reviewer Workspace"
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        """Define parameter definitions"""
+        input_job_id = arcpy.Parameter(name="input_job_id",
+                                       displayName="Input WMX Job ID",
+                                       direction="Input",
+                                       datatype="GPLong",
+                                       parameterType="Required")
+        job_directory = arcpy.Parameter(name="job_directory",
+                                        displayName="Job Directory",
+                                        direction="Input",
+                                        datatype="DEFolder",
+                                        parameterType="Required")   
+        
+        #input_job_id.value = 2033
+        #job_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_2033"
+        params = [input_job_id, job_directory]
+        return params
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        if arcpy.CheckExtension("datareviewer") == "Available":
+            return True
+        return False
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        try:
+            job_id = parameters[0].value
+            job_directory = str(parameters[1].value)
+            
+            arcpy.AddMessage("Creating the new File Geodatabase.")
+            if arcpy.Exists(os.path.join(job_directory, "DataReviewer_Job_" + str(job_id) + ".gdb")) == True:
+                arcpy.AddError("Data Reviewer Workspace already exists in the Job Directory.")
+                raise arcpy.ExecuteError 
+            
+            result = arcpy.CreateFileGDB_management(job_directory, "DataReviewer_Job_" + str(job_id))
+            dr_workspace = result.getOutput(0)
+            
+            arcpy.AddMessage("Enabling Data Reviewer on the new File Geodatbase.")
+            arcpy.AddMessage("Using GCS_WGS_1984 for the spatial reference on the Data Reviewer Workspace.")
+            arcpy.EnableDataReviewer_Reviewer(dr_workspace)
+            
+            arcpy.AddMessage("Updating the Job's Extended Properties.")
+            utilities_class = Utilities_WMX()  
+            utilities_class.update_extended_properties(job_id, "DR_WORKSPACE", dr_workspace)   
+            
+            
+            
+        except arcpy.ExecuteError:
+            arcpy.AddError(arcpy.GetMessages(2))
+        except SystemError:
+            arcpy.AddError("System Error: " + sys.exc_info()[0])
+        except Exception as ex:
+            arcpy.AddError("Unexpected Error: " + ex.message)            
+        
 
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = CreateReplicaFileGDB()
+    #g = CreateDataReviewerDatabase()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
