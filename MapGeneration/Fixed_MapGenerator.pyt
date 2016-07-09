@@ -65,7 +65,7 @@ class MapGenerator_25K(object):
                                       parameterType="Derived")
 
         # For Debugging and testing
-        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_25K","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453868.023369277,4957185.0579098556],[-12446910.558979558,4957185.6017564684],[-12439953.094812483,4957185.6017564684],[-12439953.094812483,4948023.1131076179],[-12439953.094812483,4938869.1756399116],[-12446910.558979558,4938869.1756399116],[-12453868.023369277,4938869.1756399116],[-12453868.023369277,4948023.1131076179],[-12453868.023369277,4957185.0579098556]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":false,"mapSheetName":"Draper ","customName":""}'
+        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_25K","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453868.023369277,4938869.1756399116],[-12446910.558979558,4938869.1756399116],[-12439953.094812483,4938869.1756399116],[-12439953.094812483,4929723.7623885619],[-12439953.094812483,4920586.8467766969],[-12446910.558979558,4920586.28025827],[-12453868.023369277,4920586.8467766969],[-12453868.023369277,4929723.7623885619],[-12453868.023369277,4938869.1756399116]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":true,"layout_rules":"CTM_Layout_Rules.xml","mapSheetName":"Lehi ","customName":""}'
         params = [product_as_json, output_file]
         return params
 
@@ -778,6 +778,9 @@ class MapGenerator(object):
                             map_edition = row[2]
                     
                 # Updating the Surround Elements
+                # Appling the Layout Rules
+                
+                #arcpyproduction.mapping.ApplyLayoutRules(final_mxd, os.path.join(product_location, product.layout_rules))
                 MapGenerator.updateLayoutElements(self, layout_elements, map_name, state_name, product.mapSheetName, map_series, map_edition, map_sheet)
                 arcpy.RefreshActiveView()
                 arcpy.RefreshTOC()
@@ -908,16 +911,15 @@ class DesktopGateway(object):
         params = [map_aoi, map_name_field, map_template, grid_xml, export_type, working_directory, production_pdf_xml, production_workspace, keep_mxd, output_file]
 
         # Default Values for Debugging
-        #map_aoi.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\SaltLakeCity.gdb\SLC_AOIs"
-        #map_aoi.value = "SLC_AOIs"
+        #map_aoi.value = r"C:\Data\MCS_POD\Fixed25K\SampleData\SaltLakeCity.gdb\Reference_Layer\SLC_AOIs"
         #map_name_field.value = "QUAD_NAME"
-        #map_template.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM25KTemplate.mxd"
-        #grid_xml.value = r"C:\arcgisserver\MCS_POD\Products\Fixed 25K\CTM_UTM_WGS84_grid.xml"
+        #map_template.value = r"C:\Data\MCS_POD\Fixed25K\Cartography\MapTemplates\CTM25KTemplate.mxd"
+        #grid_xml.value = r"C:\Data\MCS_POD\Fixed25K\Cartography\Grids\CTM_25K_UTM_WGS84_grid.xml"
         #export_type.value = "LAYOUT GEOTIFF"
         #export_type.value = "PDF"
-        #working_directory.value = r"C:\arcgisserver\MCS_POD\WMX\Test_Working_Dir"
-        #production_workspace.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\SaltLakeCity.gdb"
-        #production_pdf_xml.value = r"C:\arcgisserver\MCS_POD\WMX\WMX_Templates\CTM_Production_PDF.xml"
+        #working_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_2040"
+        #production_workspace.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_2040\SaltLakeCity.gdb"
+        #production_pdf_xml.value = r"C:\Data\MCS_POD\Fixed25K\Cartography"
         #keep_mxd.value = True
         return params
 
@@ -1000,11 +1002,18 @@ class DesktopGateway(object):
 
                     # Calls the Map Generation locgic
                     arcpy.AddMessage("Call the Map Generation tool for the: " + map_name + " AOI.")
-                    mp_generator = MapGenerator()
-                    par = mp_generator.getParameterInfo()
-                    par[0].value = input_json
-                    mp_generator.execute(par, None)
-                    outfile = os.path.join(output_location, par[1].value)
+                    
+                    
+                    map_generator_class = MapGenerator()
+                    create_map_method = getattr(map_generator_class, 'createmap')
+                    outfile = create_map_method(input_json)                    
+
+
+                    #mp_generator = MapGenerator()
+                    #par = mp_generator.getParameterInfo()
+                    #par[0].value = input_json
+                    #mp_generator.execute(par, None)
+                    #outfile = os.path.join(output_location, par[1].value)
 
                     # Creates the array for the list of output(s)
                     if export_type == "Multi-page PDF":
@@ -1052,7 +1061,7 @@ class DesktopGateway(object):
 # comment out when running in ArcMap
 #def main():
     ##g = DesktopGateway()
-    #g = MapGenerator_25K()
+    #g = DesktopGateway()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
