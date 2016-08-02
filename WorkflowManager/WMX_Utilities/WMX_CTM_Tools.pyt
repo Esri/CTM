@@ -171,11 +171,6 @@ class CreateReplicaFileGDB(object):
                         zfile.write(os.path.join(root, f), f)
                 zfile.close()
                 shutil.rmtree(os.path.join(parent_job_directory, file_gdb_name + ".gdb"))
-                
-                wmx_connection = arcpywmx.Connect()
-                job = wmx_connection.getJob(int(input_job_id))  
-                job.addAttachment('EMBEDDED', zip_file_name)
-                arcpy.AddMessage("Replica Zipped File has been attached to the job.")
 
             arcpy.AddMessage("Updating the Job's extended properties.")
             utilities_class.update_extended_properties(input_job_id, "JOBREPLICA", os.path.join(parent_job_directory, file_gdb_name + ".gdb"))   
