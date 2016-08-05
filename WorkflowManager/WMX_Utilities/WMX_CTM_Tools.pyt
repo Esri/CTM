@@ -23,33 +23,79 @@ import datetime
 import arcpywmx
 
 # Global Variables
-extended_propert_table = "CTM_WMX_Development.DBO.CTM_EXT_JOB_REPLICA"
+extended_property_table_name = "CTM_EXT_JOB_REPLICA"
 
 class Utilities_WMX(object):
     
     # Logic to update the extended property values for WMX Jobs
-    def update_extended_properties(self, job_id, extended_property_field, field_value):
-        arcpy.CheckOutExtension('JTX')
-        arcpy.AddMessage("Updating the job extended properties.")
+    def update_extended_properties(self, job_id, extended_property_field_name, field_value):
+        try:
+            arcpy.CheckOutExtension('JTX')
+            arcpy.AddMessage("Updating the job extended properties.")
+                
+            wmx_connection = arcpywmx.Connect()
+            job = wmx_connection.getJob(int(job_id))
             
-        wmx_connection = arcpywmx.Connect()
-        job = wmx_connection.getJob(int(job_id))
-        extended_property_table = job.getExtendedPropertyTable(extended_propert_table)
-        extended_property_table[extended_property_field].data = field_value
-        job.save()
-
-        return
+            extended_table_list = job.listExtendedProperties()
+            extended_property_table_formal_name = None
+            for table in extended_table_list:
+                if str(extended_property_table_name) in str(table):
+                    extended_property_table_formal_name = table
+            extended_property_table = job.getExtendedPropertyTable(extended_property_table_formal_name)
+            extended_property_table[extended_property_field_name].data = field_value
+            job.save()
+    
+            return
+        except arcpy.ExecuteError:
+            arcpy.AddError(arcpy.GetMessages(2))
+        except SystemError:
+            arcpy.AddError("System Error: " + sys.exc_info()[0])
+        except Exception as ex:
+            arcpy.AddError("Unexpected Error: " + ex.message)        
+    
+    # Logic to get the value of an extended property
+    def get_extended_properties(self, job_id, extended_property_field_name):
+        try:
+            arcpy.CheckOutExtension('JTX')
+            arcpy.AddMessage("Getting the job's extended properties.")
+                
+            wmx_connection = arcpywmx.Connect()
+            job = wmx_connection.getJob(int(job_id))
+            
+            extended_table_list = job.listExtendedProperties()
+            extended_property_table_formal_name = None
+            for table in extended_table_list:
+                if str(extended_property_table_name) in str(table):
+                    extended_property_table_formal_name = table
+    
+            extended_property_table = job.getExtendedPropertyTable(extended_property_table_formal_name)
+            field_value = extended_property_table[extended_property_field_name].data
+            
+            return field_value
+        except arcpy.ExecuteError:
+            arcpy.AddError(arcpy.GetMessages(2))
+        except SystemError:
+            arcpy.AddError("System Error: " + sys.exc_info()[0])
+        except Exception as ex:
+            arcpy.AddError("Unexpected Error: " + ex.message)        
     
     def get_geodatabase_path(self, input_table):
         '''Return the Geodatabase path from the input table or feature class.
         :param input_table: path to the input table or feature class 
         '''
-        workspace = os.path.dirname(input_table)
-        if [any(ext) for ext in ('.gdb', '.mdb', '.sde') if ext in os.path.splitext(workspace)]:
-            return workspace
-        else:
-            return os.path.dirname(workspace)    
-
+        try:
+            workspace = os.path.dirname(input_table)
+            if [any(ext) for ext in ('.gdb', '.mdb', '.sde') if ext in os.path.splitext(workspace)]:
+                return workspace
+            else:
+                return os.path.dirname(workspace)    
+        except arcpy.ExecuteError:
+            arcpy.AddError(arcpy.GetMessages(2))
+        except SystemError:
+            arcpy.AddError("System Error: " + sys.exc_info()[0])
+        except Exception as ex:
+            arcpy.AddError("Unexpected Error: " + ex.message)
+            
 class Toolbox(object):
     """Toolbox classes, ArcMap needs this class."""
     def __init__(self):
@@ -85,8 +131,8 @@ class CreateReplicaFileGDB(object):
                                          direction="Input",
                                          datatype="GPBoolean",
                                          parameterType="Optional")
-        #input_job_id.value = 2031
-        #job_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_2031"
+        input_job_id.value = 4089
+        job_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_4089"
         #contractor_job.value = True
         params = [input_job_id, job_directory, contractor_job]
         return params
@@ -605,8 +651,8 @@ class CreateJobFolder(object):
                                  datatype="GPString",
                                  parameterType="Required")
 
-        #parent_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store"
-        #job_id.value = 1603
+        parent_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store"
+        job_id.value = 3689
 
         params = [parent_folder, job_id]
         return params
@@ -688,9 +734,9 @@ class IncreaseReviewLoopCount(object):
                           datatype="GPString",
                           parameterType="Required")
         
-        #input_job_id.value = 21
-        #session_id.value = 5609
-        #reviewer_ws.value = r"C:\Data\MCS_POD\WorkflowManager\Database Configuration\CTM_DataReviewer.sde"
+        input_job_id.value = 4090
+        session_id.value = 23263
+        reviewer_ws.value = r"C:\Data\MCS_POD\WorkflowManager\Database Configuration\CTM_DataReviewer.sde"
         
         params = [input_job_id, reviewer_ws, session_id]
         return params
@@ -717,21 +763,18 @@ class IncreaseReviewLoopCount(object):
             
             #Updating the Extending property for the Job
             job_id = parameters[0].value
+
+            utilities_class = Utilities_WMX()
+            data_reviewer_loop_count = utilities_class.get_extended_properties(job_id, "REVCNT")
             
-            
-            wmx_connection = arcpywmx.Connect()
-            job = wmx_connection.getJob(int(job_id))
-            extended_property_table = job.getExtendedPropertyTable(extended_propert_table)
-            extended_property_field = 'REVCNT'
-            data_reviewer_loop_count = None
-            data_reviewer_loop_count = extended_property_table[extended_property_field].data
             if data_reviewer_loop_count != None:
                 data_reviewer_loop_count = data_reviewer_loop_count + 1
             else:
                 data_reviewer_loop_count = 1
-            extended_property_table[extended_property_field].data = data_reviewer_loop_count
-            job.save()
             
+            #updating the reviewer loop count value
+            utilities_class.update_extended_properties(job_id, "REVCNT", data_reviewer_loop_count)
+                        
             #Updating the WMX JOB Id value in the Data Reviewer Table            
             dr_workspace = parameters[1].value
             dr_session_id = parameters[2].value
@@ -763,7 +806,7 @@ class IncreaseReviewLoopCount(object):
     
             with arcpy.da.UpdateCursor(rev_table_main, [wmx_job_id_field, "SESSIONID"]) as ucur_dr:
                 for row in ucur_dr:
-                    print "Session ID is: " + str(row[1])
+                    #print "Session ID is: " + str(row[1])
                     if str(row[1]) == str(dr_session_id):
                         if row[0] != job_id:
                             row[0] = job_id
@@ -861,7 +904,7 @@ class CreateDataReviewerDatabase(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = CreateDataReviewerDatabase()
+    #g = IncreaseReviewLoopCount()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
