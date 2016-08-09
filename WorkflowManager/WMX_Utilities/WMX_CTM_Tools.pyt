@@ -103,7 +103,7 @@ class Toolbox(object):
         self.label = "Fixed 25K Tools"
         self.alias = "fixed25kTools"
         # List of tool classes associated with this toolbox
-        self.tools = [CreateReplicaFileGDB, ReconcileAndPost, UpdateAOIDate, ResourceMXD, ExportMapDocumment, CreateJobFolder, IncreaseReviewLoopCount, CreateDataReviewerDatabase]
+        self.tools = [CreateReplicaFileGDB, ReconcileAndPost, UpdateAOIDate, ResourceMXD, CreateJobFolder, IncreaseReviewLoopCount, CreateDataReviewerDatabase]
 
 class CreateReplicaFileGDB(object):
     """ Class that contains the code to generate a new map based off the input aoi"""
@@ -131,8 +131,8 @@ class CreateReplicaFileGDB(object):
                                          direction="Input",
                                          datatype="GPBoolean",
                                          parameterType="Optional")
-        input_job_id.value = 4089
-        job_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_4089"
+        #input_job_id.value = 4099
+        #job_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_4099"
         #contractor_job.value = True
         params = [input_job_id, job_directory, contractor_job]
         return params
@@ -168,6 +168,10 @@ class CreateReplicaFileGDB(object):
 
             file_gdb_name = "Job_" + input_job_id + "_Replica"
             job_aoi_layer = "AOILayer_Job" + input_job_id
+            
+            job_version = arcpy.GetJobVersion_wmx(input_job_id)
+            if job_version[0] == "dbo.DEFAULT":
+                arcpy.AddWarning("The Job Version is set to DEFAULT.")
 
             arcpy.AddMessage("Getting the Job Workspace.")
             arcpy.GetJobDataWorkspace_wmx(input_job_id, "", scratch_folder)
@@ -186,7 +190,7 @@ class CreateReplicaFileGDB(object):
             for t in table_list:
                 replica_item_list = replica_item_list + str(parent_workspace) + "//" + str(t) + " ALL_ROWS" + ";"
             for fc in feature_class_list:
-                replica_item_list = replica_item_list + str(parent_workspace) + "//" + str(fc) + " USE_FILTERS" + ";"
+                replica_item_list = replica_item_list + str(parent_workspace) + "//" + str(fc) + " ALL_ROWS" + ";"
             for fd in feature_dataset_list:
                 fc_list = arcpy.ListFeatureClasses("", "", fd)
                 for fc in fc_list:
@@ -198,7 +202,7 @@ class CreateReplicaFileGDB(object):
             aoi = arcpy.GetJobAOI_wmx(input_job_id, job_aoi_layer, "")
 
             arcpy.AddMessage("Creating Check-out Replica.")
-            result = arcpy.CreateReplica_production(replica_item_list, 'CHECKOUT', str(replica_file_gdb), "Replica_" + str(input_job_id), 'DO_NOT_REUSE', 'FILTER_BY_GEOMETRY', 'INTERSECTS', aoi, 'FULL', 'NO_ARCHIVING', '#')
+            result = arcpy.CreateReplica_production(replica_item_list, 'CHECKOUT', str(replica_file_gdb), "Replica_" + str(input_job_id), 'REUSE', 'FILTER_BY_GEOMETRY', 'INTERSECTS', aoi, 'FULL', 'NO_ARCHIVING', '#')
             arcpy.AddMessage(result.getMessages())
 
             utilities_class = Utilities_WMX()           
@@ -540,85 +544,85 @@ class ResourceMXD(object):
         except Exception as ex:
             arcpy.AddError("Unexpected Error: " + ex.message)
 
-class ExportMapDocumment(object):
-    """ Class that contains the code to generate a new map based off the input aoi"""
+#class ExportMapDocumment(object):
+    #""" Class that contains the code to generate a new map based off the input aoi"""
 
-    def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
-        self.label = "Map Document Export"
-        self.description = "Exports the Map Document"
-        self.canRunInBackground = False
+    #def __init__(self):
+        #"""Define the tool (tool name is the name of the class)."""
+        #self.label = "Map Document Export"
+        #self.description = "Exports the Map Document"
+        #self.canRunInBackground = False
 
-    def getParameterInfo(self):
-        """Define parameter definitions"""
-        job_mxd = arcpy.Parameter(name="job_mxd",
-                                  displayName="Job Map Document",
-                                  direction="Input",
-                                  datatype="DEMapDocument",
-                                  parameterType="Required")
+    #def getParameterInfo(self):
+        #"""Define parameter definitions"""
+        #job_mxd = arcpy.Parameter(name="job_mxd",
+                                  #displayName="Job Map Document",
+                                  #direction="Input",
+                                  #datatype="DEMapDocument",
+                                  #parameterType="Required")
 
-        job_workspace = arcpy.Parameter(name="job_workspace",
-                                        displayName="Job Directory",
-                                        direction="Input",
-                                        datatype="DEFolder",
-                                        parameterType="Required")
+        #job_workspace = arcpy.Parameter(name="job_workspace",
+                                        #displayName="Job Directory",
+                                        #direction="Input",
+                                        #datatype="DEFolder",
+                                        #parameterType="Required")
 
-        export_type = arcpy.Parameter(name="export_type",
-                                      displayName="Export Type",
-                                      direction="Input",
-                                      datatype="GPString",
-                                      parameterType="Required")
+        #export_type = arcpy.Parameter(name="export_type",
+                                      #displayName="Export Type",
+                                      #direction="Input",
+                                      #datatype="GPString",
+                                      #parameterType="Required")
 
-        map_name = arcpy.Parameter(name="map_name",
-                                   displayName="Map Name",
-                                   direction="Input",
-                                   datatype="GPString",
-                                   parameterType="Required")
+        #map_name = arcpy.Parameter(name="map_name",
+                                   #displayName="Map Name",
+                                   #direction="Input",
+                                   #datatype="GPString",
+                                   #parameterType="Required")
 
 
-        export_type.filter.list = ["PDF", "PRODUCTION PDF", "TIFF"]
+        #export_type.filter.list = ["PDF", "PRODUCTION PDF", "TIFF"]
 
-        params = [job_mxd, job_workspace, export_type, map_name]
-        return params
+        #params = [job_mxd, job_workspace, export_type, map_name]
+        #return params
 
-    def isLicensed(self):
-        """Set whether tool is licensed to execute."""
-        if arcpy.CheckExtension("foundation") == "Available":
-            return True
-        return False
+    #def isLicensed(self):
+        #"""Set whether tool is licensed to execute."""
+        #if arcpy.CheckExtension("foundation") == "Available":
+            #return True
+        #return False
 
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-        return
+    #def updateParameters(self, parameters):
+        #"""Modify the values and properties of parameters before internal
+        #validation is performed.  This method is called whenever a parameter
+        #has been changed."""
+        #return
 
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter.  This method is called after internal validation."""
-        return
+    #def updateMessages(self, parameters):
+        #"""Modify the messages created by internal validation for each tool
+        #parameter.  This method is called after internal validation."""
+        #return
 
-    def execute(self, parameters, messages):
-        """The source code of the tool."""
-        try:
-            arcpy.env.overwriteOutput = True
+    #def execute(self, parameters, messages):
+        #"""The source code of the tool."""
+        #try:
+            #arcpy.env.overwriteOutput = True
 
-            job_mxd = str(parameters[0].value)
-            output_directory = str(parameters[1].value)
-            map_output_type = str(parameters[2].value)
-            map_name = parameters[3].value
+            #job_mxd = str(parameters[0].value)
+            #output_directory = str(parameters[1].value)
+            #map_output_type = str(parameters[2].value)
+            #map_name = parameters[3].value
 
-            final_mxd = arcpy.mapping.MapDocument(job_mxd)
-            data_frame = None
-            product_location = CTM_WMX_Utilities.shared_products_path
-            arcpy.AddMessage("PDF is: " + map_name)
+            #final_mxd = arcpy.mapping.MapDocument(job_mxd)
+            #data_frame = None
+            #product_location = CTM_WMX_Utilities.shared_products_path
+            #arcpy.AddMessage("PDF is: " + map_name)
 
-            file_name = CTM_WMX_Utilities.export_map_document(product_location, final_mxd,
-                                                      map_name, data_frame,
-                                                      output_directory, map_output_type)
+            #file_name = CTM_WMX_Utilities.export_map_document(product_location, final_mxd,
+                                                      #map_name, data_frame,
+                                                      #output_directory, map_output_type)
 
-            arcpy.AddMessage("PDF is: " + file_name)
-            return
+            #arcpy.AddMessage("PDF is: " + file_name)
+            #return
 
         except arcpy.ExecuteError:
             arcpy.AddError(arcpy.GetMessages(2))
@@ -651,8 +655,8 @@ class CreateJobFolder(object):
                                  datatype="GPString",
                                  parameterType="Required")
 
-        parent_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store"
-        job_id.value = 3689
+        #parent_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store"
+        #job_id.value = 3689
 
         params = [parent_folder, job_id]
         return params
@@ -734,9 +738,9 @@ class IncreaseReviewLoopCount(object):
                           datatype="GPString",
                           parameterType="Required")
         
-        input_job_id.value = 4090
-        session_id.value = 23263
-        reviewer_ws.value = r"C:\Data\MCS_POD\WorkflowManager\Database Configuration\CTM_DataReviewer.sde"
+        #input_job_id.value = 4090
+        #session_id.value = 23263
+        #reviewer_ws.value = r"C:\Data\MCS_POD\WorkflowManager\Database Configuration\CTM_DataReviewer.sde"
         
         params = [input_job_id, reviewer_ws, session_id]
         return params
@@ -781,7 +785,6 @@ class IncreaseReviewLoopCount(object):
             
             arcpy.env.workspace = dr_workspace
         
-            arcpy.AddMessage("Getting the List of tables and feature class to replicate.")
             table_list = [table for table in arcpy.ListTables() if table.endswith('REVTABLEMAIN')]
             
             rev_table_main = table_list[0]
@@ -904,7 +907,7 @@ class CreateDataReviewerDatabase(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = IncreaseReviewLoopCount()
+    #g = CreateReplicaFileGDB()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
