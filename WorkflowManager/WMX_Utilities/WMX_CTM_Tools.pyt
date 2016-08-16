@@ -468,9 +468,9 @@ class ResourceMXD(object):
                                     datatype="DEWorkspace",
                                     parameterType="Required")
 
-        #input_job_id.value = 6
-        #job_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_6"
-        #workspace.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_6\Job_6_Replica.gdb"
+        #input_job_id.value = 4505
+        #job_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_4505"
+        #workspace.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_4505\Job_4505_Replica.gdb"
         
         params = [input_job_id, job_folder, workspace]
         return params
@@ -519,12 +519,33 @@ class ResourceMXD(object):
             arcpy.AddMessage("Reterieved the MXD Object.")
 
             arcpy.AddMessage("Getting the list of data frames.")
+            arcpy.env.workspace = workspace
+            replicaWS_featurelist = arcpy.ListFeatureClasses('*', 'All ', 'CTM')
             layerlist = arcpy.mapping.ListLayers(job_mxd)
             for layer in layerlist:
                 if layer.isGroupLayer != True:
+                    if (layer.datasetName).rsplit(".")[-1] not in replicaWS_featurelist:
+                        arcpy.AddError("The dataset: " + layer.name + " does not exists in the checkout replica database.")
+                        raise arcpy.ExecuteError
                     arcpy.AddMessage("Resourcing layer: " + layer.name)
                     layer.replaceDataSource(workspace, "FILEGDB_WORKSPACE", "", True)
+
             arcpy.AddMessage("The Data Source has been updated for each layer.")
+            
+            # Logic to Zoom the MXD to the AOI
+            job_aoi = arcpy.GetJobAOI_wmx(input_job_id, "job_aoi")
+            
+            # Gets the Largets Dataframe
+            data_frame_list = arcpy.mapping.ListDataFrames(job_mxd)
+            area = 0
+            data_frame = None
+            for df in data_frame_list:
+                if area < df.elementWidth * df.elementHeight:
+                    area = df.elementWidth * df.elementHeight
+                    data_frame = df 
+            data_frame.extent = job_aoi[0].getSelectedExtent()
+            arcpy.AddMessage("The Job MXD extent has been updated to the Job AOI Extent.")
+            
 
             job_mxd.save()
             job.storeJobMap(job_mxd.filePath)
@@ -907,7 +928,7 @@ class CreateDataReviewerDatabase(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = CreateReplicaFileGDB()
+    #g = ResourceMXD()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
