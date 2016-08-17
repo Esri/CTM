@@ -821,24 +821,24 @@ class IncreaseReviewLoopCount(object):
             
             wmx_job_id_field = "WMX_JOB_ID"
             if wmx_job_id_field not in field_list_temp:
-                arcpy.AddError("The WMX_Job_Id field is missing from the Data Reviewer REVTABLEMAIN")
-                arcpy.ExecuteError()
-       
-            edit = arcpy.da.Editor(dr_workspace)
-            edit.startEditing(True, False)
-            edit.startOperation()
-    
-            with arcpy.da.UpdateCursor(rev_table_main, [wmx_job_id_field, "SESSIONID"]) as ucur_dr:
-                for row in ucur_dr:
-                    #print "Session ID is: " + str(row[1])
-                    if str(row[1]) == str(dr_session_id):
-                        if row[0] != job_id:
-                            row[0] = job_id
-                            ucur_dr.updateRow(row)
-    
-            edit.stopOperation()
-            arcpy.AddMessage("The Loop Count and Job.")
-            edit.stopEditing(True)            
+                arcpy.AddWarning("The WMX_Job_Id field is missing from the Data Reviewer REVTABLEMAIN")
+            else:
+                arcpy.AddMessage("Updating the  WMX_ID field for the errors found in this job.")
+                edit = arcpy.da.Editor(dr_workspace)
+                edit.startEditing(True, False)
+                edit.startOperation()
+        
+                with arcpy.da.UpdateCursor(rev_table_main, [wmx_job_id_field, "SESSIONID"]) as ucur_dr:
+                    for row in ucur_dr:
+                        #print "Session ID is: " + str(row[1])
+                        if str(row[1]) == str(dr_session_id):
+                            if row[0] != job_id:
+                                row[0] = job_id
+                                ucur_dr.updateRow(row)
+        
+                edit.stopOperation()
+                arcpy.AddMessage("The Loop Count and Job.")
+                edit.stopEditing(True)            
 
             return
 
