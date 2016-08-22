@@ -436,7 +436,7 @@ class ResourceMXD(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Resources Map Document"
-        self.description = "Resource the Job MXD."
+        self.description = "Resource the WMX Job MXD."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -468,7 +468,9 @@ class ResourceMXD(object):
 
     def isLicensed(self):
         """Set whether tool is licensed to execute."""
-        return
+        if arcpy.CheckExtension("JTX") == "Available":
+            return True
+        return False
 
     def updateParameters(self, parameters):
         """Modify the values and properties of parameters before internal
@@ -636,12 +638,12 @@ class ResourceMXD(object):
             #arcpy.AddMessage("PDF is: " + file_name)
             #return
 
-        except arcpy.ExecuteError:
-            arcpy.AddError(arcpy.GetMessages(2))
-        except SystemError:
-            arcpy.AddError("System Error: " + sys.exc_info()[0])
-        except Exception as ex:
-            arcpy.AddError("Unexpected Error: " + ex.message)
+        #except arcpy.ExecuteError:
+            #arcpy.AddError(arcpy.GetMessages(2))
+        #except SystemError:
+            #arcpy.AddError("System Error: " + sys.exc_info()[0])
+        #except Exception as ex:
+            #arcpy.AddError("Unexpected Error: " + ex.message)
 
 
 class CreateJobFolder(object):
