@@ -100,8 +100,8 @@ class Toolbox(object):
     """Toolbox classes, ArcMap needs this class."""
     def __init__(self):
         """Define the toolbox (the name of the toolbox is the name of the .pyt file)."""
-        self.label = "Fixed 25K Tools"
-        self.alias = "fixed25kTools"
+        self.label = "CTM Workflow Manager Tools"
+        self.alias = "ctmWMXTools"
         # List of tool classes associated with this toolbox
         self.tools = [CreateReplicaFileGDB, ReconcileAndPost, UpdateAOIDate, ResourceMXD, CreateJobFolder, IncreaseReviewLoopCount, CreateDataReviewerDatabase]
 
@@ -333,25 +333,26 @@ class UpdateAOIDate(object):
                                        datatype="GPLong",
                                        parameterType="Required")
 
-        aoi_index_layer = arcpy.Parameter(name="aoi_index_layer",
-                                          displayName="AOI Index Layer",
+        aoi_index = arcpy.Parameter(name="aoi_index",
+                                          displayName="AOI Index",
                                           direction="Input",
                                           datatype="DEFeatureClass",
                                           parameterType="Required")
 
-        job_type = arcpy.Parameter(name="job_type",
-                                   displayName="Job Type",
+        date_field = arcpy.Parameter(name="date_field",
+                                   displayName="AOI Date Modification Field",
                                    direction="Input",
-                                   datatype="GPString",
+                                   datatype="Field",
                                    parameterType="Required")
-
-        job_type.filter.list = ["Data", "Cartography"]
         
-        #input_job_id.value = 1
-        #aoi_index_layer.value = r'Database Connections\Connection to ps000818_sqlexpress.sde\CTM_Data.DBO.Reference_Layer\CTM_Data.DBO.AOIs_24K'
-        #job_type.value = "Data"
+        date_field.parameterDependencies = [aoi_index.name] 
+        date_field.filter.list = ["Date"]
+        
+        #input_job_id.value = 4512
+        #aoi_index.value = r'C:\Data\MCS_POD\WorkflowManager\Database Configuration\CTM_Data.sde\CTM_25K_Data_Demo.DBO.Reference_Layer\CTM_25K_Data_Demo.DBO.AOIs_25K'
+        #date_field.value = "Data_Mod_Date"
 
-        params = [input_job_id, aoi_index_layer, job_type]
+        params = [input_job_id, aoi_index, date_field]
         return params
 
     def isLicensed(self):
@@ -363,7 +364,7 @@ class UpdateAOIDate(object):
     def updateParameters(self, parameters):
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
-        has been changed."""
+        has been changed."""          
         return
 
     def updateMessages(self, parameters):
@@ -379,7 +380,7 @@ class UpdateAOIDate(object):
             
             input_job_id = str(parameters[0].value)
             aoi_index_layer = parameters[1].value
-            job_type = parameters[2].value
+            update_field = parameters[2].value
             #workspace = parameters[3].value
             
             utilities_class = Utilities_WMX()
@@ -390,8 +391,6 @@ class UpdateAOIDate(object):
 
             job_aoi_layer = "AOILayer_Job" + input_job_id
             aoi_feature_layer = "aoi_feature_layer"
-            date_field_name = "Data_Mod_Date"
-            carto_field_name = "Carto_Mod_Date"
 
             #Get's the job workspace information
             arcpy.AddMessage("Getting the Job AOI.")
@@ -407,23 +406,15 @@ class UpdateAOIDate(object):
             
             if int(count.getOutput(0)) == 1:
                 cur_date = datetime.datetime.now()
-                update_field = None
-        
-                if job_type == "Data":
-                    update_field = date_field_name
-                elif job_type == "Cartography":
-                    update_field = carto_field_name
-        
+
                 edit = arcpy.da.Editor(workspace)
                 edit.startEditing(True, False)
                 edit.startOperation()
-        
-        
-                with arcpy.da.UpdateCursor(aoi_feature_layer, [update_field]) as ucur_aoi:
+
+                with arcpy.da.UpdateCursor(aoi_feature_layer, [str(update_field)]) as ucur_aoi:
                     for row in ucur_aoi:
                         row[0] = cur_date
                         ucur_aoi.updateRow(row)
-        
         
                 edit.stopOperation()
                 arcpy.AddMessage("The AOI has been successfully updated.")
@@ -928,7 +919,7 @@ class CreateDataReviewerDatabase(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = ResourceMXD()
+    #g = UpdateAOIDate()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
