@@ -13,7 +13,7 @@
 ###| limitations under the License.
 
 """This python toolbox contains tools for
-creating a new map for the Fixed 25K Product"""
+the CTM Workflow Manager Configuration."""
 import arcpy
 import os
 import sys
@@ -31,7 +31,7 @@ class Utilities_WMX(object):
     def update_extended_properties(self, job_id, extended_property_field_name, field_value):
         try:
             arcpy.CheckOutExtension('JTX')
-            arcpy.AddMessage("Updating the job extended properties.")
+            arcpy.AddMessage("Updating the job " + str(extended_property_field_name) + " extended property.")
                 
             wmx_connection = arcpywmx.Connect()
             job = wmx_connection.getJob(int(job_id))
@@ -131,9 +131,9 @@ class CreateReplicaFileGDB(object):
                                          direction="Input",
                                          datatype="GPBoolean",
                                          parameterType="Optional")
-        #input_job_id.value = 4099
-        #job_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_4099"
-        #contractor_job.value = True
+        #input_job_id.value = 4917
+        #job_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_4917"
+        #contractor_job.value = False
         params = [input_job_id, job_directory, contractor_job]
         return params
 
@@ -163,7 +163,8 @@ class CreateReplicaFileGDB(object):
             scratch_folder = arcpy.env.scratchFolder
 
             input_job_id = str(parameters[0].value)
-            parent_job_directory = str(parameters[1].value)
+            #parent_job_directory = str(parameters[1].value)
+            parent_job_directory = scratch_folder
             contractor_job = parameters[2].value
 
             file_gdb_name = "Job_" + input_job_id + "_Replica"
@@ -215,17 +216,23 @@ class CreateReplicaFileGDB(object):
                 
                 arcpy.AddMessage("Zipping the Replica File Geodatabase for the contractor.")
                 zip_file_name = os.path.join(parent_job_directory, file_gdb_name + ".gdb" + ".zip")
+                
+                zip_file_name = os.path.join(parent_job_directory, file_gdb_name + ".gdb" + ".zip")
                 zfile = zipfile.ZipFile(zip_file_name, 'a')
+
                 for root, dirs, files in os.walk(str(replica_file_gdb)):
                     for f in files:
-                        zfile.write(os.path.join(root, f), f)
+                        zfile.write(os.path.join(root, f), os.path.join(file_gdb_name + ".gdb", f))
                 zfile.close()
-                shutil.rmtree(os.path.join(parent_job_directory, file_gdb_name + ".gdb"))
+                shutil.copy(zip_file_name, str(parameters[1].value))
+                utilities_class.update_extended_properties(input_job_id, "JOBREPLICA", os.path.join(str(parameters[1].value), file_gdb_name + ".gdb" + ".zip"))   
 
-            arcpy.AddMessage("Updating the Job's extended properties.")
-            utilities_class.update_extended_properties(input_job_id, "JOBREPLICA", os.path.join(parent_job_directory, file_gdb_name + ".gdb"))   
-            utilities_class.update_extended_properties(input_job_id, "SDE_REPLICA", int(1))                
+            else:
+                shutil.copytree(str(replica_file_gdb), os.path.join(str(parameters[1].value),file_gdb_name + ".gdb"))
+                utilities_class.update_extended_properties(input_job_id, "JOBREPLICA", os.path.join(str(parameters[1].value), file_gdb_name + ".gdb"))   
                 
+            shutil.rmtree(os.path.join(parent_job_directory, file_gdb_name + ".gdb"))
+            utilities_class.update_extended_properties(input_job_id, "SDE_REPLICA", int(1))                
             return
 
         except arcpy.ExecuteError:
@@ -921,7 +928,7 @@ class CreateDataReviewerDatabase(object):
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
 #def main():
-    #g = UpdateAOIDate()
+    #g = CreateReplicaFileGDB()
     #par = g.getParameterInfo()
     #g.execute(par, None)
 
