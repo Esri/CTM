@@ -507,7 +507,7 @@ class ResourceMXD(object):
             wmx_connection = arcpywmx.Connect()
             arcpy.AddMessage("Establish connection to the default WMX configuration on this machine.")
             job = wmx_connection.getJob(int(input_job_id)) 
-            arcpy.AddMessage("Retervied the WMX Job Object.")
+            arcpy.AddMessage("Retrieved the WMX Job Object.")
             
             # Retrives the Job Map Document and saves it to the Job Folder
             mxd_path = (os.path.join(job_folder, "JOB_" + str(job.ID) + ".mxd"))
@@ -516,7 +516,7 @@ class ResourceMXD(object):
 
             # Gets the MXD object
             job_mxd = arcpy.mapping.MapDocument(mxd_path)
-            arcpy.AddMessage("Reterieved the MXD Object.")
+            arcpy.AddMessage("Retrieved the MXD Object.")
 
             arcpy.AddMessage("Getting the list of data frames.")
             arcpy.env.workspace = workspace
