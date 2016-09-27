@@ -31,8 +31,9 @@ Instructions
 
 Requirements:
 ---
-  1.  ArcGIS 10.3.1
-  2.  Esri Production Mapping 10.3.1 Patch 1
+  1.  ArcGIS 10.4.1
+  2.  Esri Production Mapping 10.4.1 Patch 1
+  3.  ArcGIS Workflow Manager 10.4.1
 
   
 Contributing

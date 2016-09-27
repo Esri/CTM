@@ -51,7 +51,8 @@ def main():
     output_folder = arcpy.GetParameterAsText(2)
     output_name = arcpy.GetParameterAsText(3)
     product_library = arcpy.GetParameterAsText(4)
-    backup = arcpy.GetParameterAsText(5)
+    vvs = arcpy.GetParameterAsText(5)
+    backup = arcpy.GetParameterAsText(6)
 
     count = 0
 
@@ -65,14 +66,15 @@ def main():
         arcpy.Copy_management(input_workspace, gen_workspace)
 
         #Creating the Scratch workspace
-        scratch_workspace = arcpy.CreateFileGDB_management(output_folder, "Scratch")
+        #scratch_workspace = arcpy.CreateFileGDB_management(output_folder, "Scratch")
+        scratch_workspace = 'in_memory'
 
         #Run the prepare script
         arcpy.AddMessage("Running Prepare Model")
 
         start = datetime.datetime.now().replace(microsecond=0)
 
-        arcpy.PrepareData_CTM50KGeneralization(gen_workspace, scratch_workspace, product_library, aoi_fc)
+        arcpy.PrepareData_CTM50KGeneralization(gen_workspace, scratch_workspace, aoi_fc, vvs)
         end = datetime.datetime.now().replace(microsecond=0)
         arcpy.AddMessage(arcpy.GetMessages())
         arcpy.AddMessage("Took " + str(end - start))
@@ -126,7 +128,7 @@ def main():
         #Run the Elev script
         arcpy.AddMessage("Running Elevation Model")
         start = datetime.datetime.now().replace(microsecond=0)
-        arcpy.Elev_CTM50KGeneralization(gen_workspace, scratch_workspace, 100, 500)
+        arcpy.Elev_CTM50KGeneralization(gen_workspace, scratch_workspace)
         arcpy.AddMessage(arcpy.GetMessages())
         end = datetime.datetime.now().replace(microsecond=0)
         arcpy.AddMessage(arcpy.GetMessages())
@@ -137,7 +139,7 @@ def main():
         #Run the Symbology script
         arcpy.AddMessage("Running Apply Symbology Model")
         start = datetime.datetime.now().replace(microsecond=0)
-        arcpy.ApplySymbology_CTM50KGeneralization(gen_workspace, product_library)
+        arcpy.ApplySymbology_CTM50KGeneralization(gen_workspace, product_library, vvs)
         arcpy.AddMessage(arcpy.GetMessages())
         end = datetime.datetime.now().replace(microsecond=0)
         arcpy.AddMessage(arcpy.GetMessages())
@@ -190,7 +192,11 @@ def main():
         count = create_backup(backup, gen_workspace, output_folder, 'ResolveVeg', count)
 
     finally:
-        arcpy.Delete_management(scratch_workspace)
+        if arcpy.Exists(scratch_workspace):
+            try:
+                arcpy.Delete_management(scratch_workspace)
+            except:
+                arcpy.AddWarning("Unable to delete scratch workspace " + str(scratch_workspace))
         #Clean up the final database
         if arcpy.Exists(os.path.join(gen_workspace, "AOI_Boundary_line")) == True:
             arcpy.Delete_management(os.path.join(gen_workspace, "AOI_Boundary_line"))
@@ -202,7 +208,7 @@ def main():
 
 
         arcpy.AddMessage("Took Total " + str(end_end - start_start))
-        arcpy.SetParameter(6, gen_workspace)
+        arcpy.SetParameter(7, gen_workspace)
     pass
 
 if __name__ == '__main__':
