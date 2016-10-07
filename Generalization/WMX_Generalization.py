@@ -88,6 +88,9 @@ def main():
                     if not arcpy.Exists(scratch_db):
                         arcpy.CreateFileGDB_management(output_folder, scratch_db_name)
 
+                    if arcpy.Exists(scratch_db):
+                        arcpy.AddMessage("Scratch database: " + str(scratch_db))
+
 
                     #input_path = os.path.dirname(input_workspace)
 
@@ -122,7 +125,6 @@ def main():
                     arcpy.Transportation_CTM50KGeneralization(gen_workspace, scratch_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
                     count = create_backup(backup, gen_workspace, output_folder, 'Transportation', count)
@@ -133,7 +135,6 @@ def main():
                     arcpy.Buildings_CTM50KGeneralization(gen_workspace, scratch_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
                     count = create_backup(backup, gen_workspace, output_folder, 'Building', count)
@@ -144,7 +145,6 @@ def main():
                     arcpy.Hydro_CTM50KGeneralization(gen_workspace, scratch_workspace, scratch_db)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
                     count = create_backup(backup, gen_workspace, output_folder, 'Hydro', count)
@@ -155,7 +155,6 @@ def main():
                     arcpy.arcpy.LandCov_CTM50KGeneralization(gen_workspace, scratch_workspace, scratch_db)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
                     count = create_backup(backup, gen_workspace, output_folder, 'LandCov', count)
@@ -166,7 +165,6 @@ def main():
                     arcpy.Elev_CTM50KGeneralization(gen_workspace, scratch_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
                     count = create_backup(backup, gen_workspace, output_folder, 'Elev', count)
@@ -177,7 +175,6 @@ def main():
                     arcpy.ApplySymbology_CTM50KGeneralization(gen_workspace, product_library, vvs)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
                     count = create_backup(backup, gen_workspace, output_folder, 'Symbology', count)
@@ -188,7 +185,6 @@ def main():
                     arcpy.ResolveLine_CTM50KGeneralization(gen_workspace, scratch_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
                     count = create_backup(backup, gen_workspace, output_folder, 'ResolveLine', count)
@@ -199,7 +195,6 @@ def main():
                     arcpy.ResolveStructure_CTM50KGeneralization(gen_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
                     count = create_backup(backup, gen_workspace, output_folder, 'ResolveStructure', count)
@@ -210,7 +205,6 @@ def main():
                     arcpy.ResolveHydro_CTM50KGeneralization(gen_workspace, scratch_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
                     count = create_backup(backup, gen_workspace, output_folder, 'ResolveHydro', count)
@@ -221,7 +215,6 @@ def main():
                     arcpy.ResolveVeg_CTM50KGeneralization(gen_workspace, scratch_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
                     count = create_backup(backup, gen_workspace, output_folder, 'ResolveVeg', count)
@@ -233,6 +226,7 @@ def main():
             arcpy.AddError("Cannot connect to Workflow Manager.  Ensure you have a default Workflow Manager connection.")
     except:
         arcpy.AddError("Unknown error running generalization models.")
+        arcpy.AddMessage(arcpy.GetMessages())
 
     finally:
 
