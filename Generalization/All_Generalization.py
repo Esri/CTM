@@ -60,6 +60,14 @@ def main():
 
     start_start = datetime.datetime.now().replace(microsecond=0)
     try:
+        scratch_db_name = 'scratch'
+        scratch_db = output_folder + '\\' + scratch_db_name + '.gdb'
+        if not arcpy.Exists(scratch_db):
+            arcpy.CreateFileGDB_management(output_folder, scratch_db_name)
+
+        if arcpy.Exists(scratch_db):
+            arcpy.AddMessage("Scratch database: " + str(scratch_db))
+
         #create the output database
         arcpy.AddMessage("Creating generalization database")
         gen_workspace = output_folder + '\\' + output_name + '.gdb'
@@ -106,7 +114,7 @@ def main():
         #Run the hydro script
         arcpy.AddMessage("Running Hydrography Model")
         start = datetime.datetime.now().replace(microsecond=0)
-        arcpy.Hydro_CTM50KGeneralization(gen_workspace, scratch_workspace)
+        arcpy.Hydro_CTM50KGeneralization(gen_workspace, scratch_workspace, scratch_db)
         arcpy.AddMessage(arcpy.GetMessages())
         end = datetime.datetime.now().replace(microsecond=0)
         arcpy.AddMessage(arcpy.GetMessages())
@@ -117,7 +125,7 @@ def main():
         #Run the Land Cover script
         arcpy.AddMessage("Running Land Cover Model")
         start = datetime.datetime.now().replace(microsecond=0)
-        arcpy.arcpy.LandCov_CTM50KGeneralization(gen_workspace, scratch_workspace)
+        arcpy.arcpy.LandCov_CTM50KGeneralization(gen_workspace, scratch_workspace, scratch_db)
         arcpy.AddMessage(arcpy.GetMessages())
         end = datetime.datetime.now().replace(microsecond=0)
         arcpy.AddMessage(arcpy.GetMessages())
