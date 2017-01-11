@@ -20,6 +20,7 @@ Features
   - Product Library (contains the editing and cartographic specifications)
   - Generalization Toolbox
   - Distributed Generalization Toolbox
+  - Distributed Generalization Workflow Manager Configuration(.jxl) 
 
 
 Instructions
