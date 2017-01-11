@@ -21,6 +21,7 @@ Features
   - Map Generator Python Toolbox 
   - Product Library (contains the editing and cartographic specifications)
   - Generalization Toolbox
+  - Distributed Generalization Toolbox
 
 
 Instructions
@@ -31,9 +32,9 @@ Instructions
 
 Requirements:
 ---
-  1.  ArcGIS 10.4.1
-  2.  Esri Production Mapping 10.4.1 Patch 1
-  3.  ArcGIS Workflow Manager 10.4.1
+  1.  ArcGIS 10.5 
+  2.  Esri Production Mapping 10.5 Patch 1
+  3.  ArcGIS Workflow Manager 10.5
 
   
 Contributing
@@ -44,7 +45,7 @@ Esri welcomes contributions from anyone and everyone. Please see our guidelines 
 Licensing
 ---
 
-Copyright 2015 Esri
+Copyright 2017 Esri
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
