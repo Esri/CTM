@@ -14,10 +14,85 @@ import datetime
 import arcpywmx
 
 
+def getfcs(in_workspace):
+    """ gets a list of all feature classes in a database, includes feature
+    classes inside and outside of the feature datasets"""
+
+    fcs = []
+
+    walk = arcpy.da.Walk(in_workspace, datatype="FeatureClass")
+
+    for dirpath, dirnames, filenames in walk:
+        for filename in filenames:
+           fcs.append(os.path.join(dirpath, filename))
+    arcpy.AddMessage("found " + str(len(fcs)) + " feature classes")
+    return fcs
+
+
+
+def setEdgeHierarchy(fcs, aoi, hier_field):
+    """ sets the hierarchy of all features touching the aoi to 0"""
+    arcpy.AddMessage("Setting hierarcy for edge features")
+    for fc in fcs:
+        fields = [f.name for f in arcpy.ListFields(fc)]
+        if hier_field in fields:
+            lyr = arcpy.MakeFeatureLayer_management(fc, "layera")
+            arcpy.SelectLayerByLocation_management(lyr, "INTERSECT", aoi)
+            arcpy.CalculateField_management(lyr, hier_field, "0")
+            arcpy.Delete_management(lyr)
+
+
+
+def splitLines(in_workspace, job_aoi, names=[]):
+    """ gets a list of all feature classes in a database, includes feature
+    classes inside and outside of the feature datasets"""
+
+    fcs = []
+
+    walk = arcpy.da.Walk(in_workspace, datatype="FeatureClass")
+
+    for dirpath, dirnames, filenames in walk:
+        for filename in filenames:
+            if filename in names:
+                fc = os.path.join(dirpath, filename)
+                split = arcpy.Identity_analysis(fc, job_aoi, "in_memory\\split_"+filename)
+                single = arcpy.MultipartToSinglepart_management(split, "in_memory\\split"+filename)
+                arcpy.DeleteFeatures_management(fc)
+                arcpy.Append_management(single, fc, "NO_TEST")
+
+                arcpy.Delete_management(split)
+                arcpy.Delete_management(single)
+
+
+    return fcs
+
+
+def updateOverrides(fcs):
+    """ loops through all feature classes and applies overrides to the geometry"""
+    for fc in fcs:
+        arcpy.env.overwriteOutput = True
+        arcpy.env.addOutputsToMap = False
+        desc = arcpy.Describe(fc)
+        rep_name = ""
+        if hasattr(desc, "representations"):
+            reps = desc.representations
+            for rep in reps:
+                rep_name = rep.name
+                arcpy.AddMessage("Applying Rep Overrides for " + str(fc))
+                arcpy.UpdateOverride_cartography(fc, rep_name, "BOTH")
+        arcpy.AddMessage("Repairing Geometry for " + str(fc))
+        arcpy.RepairGeometry_management(fc)
+
+    return fcs
+
+
+
+
+
 def create_backup(backup, gen_workspace, output_folder, model, count):
     if backup == 'true':
         arcpy.AddMessage("Creating Backup")
-        out = output_folder + '\\after_' + str(count) + '_' + model + '.gdb'
+        out = output_folder + '\\after_' +  model + '.gdb'
         arcpy.Copy_management(gen_workspace, out)
     count += 1
     return count
@@ -72,12 +147,25 @@ def main():
             if job:
                 job_name = job.name
                 aoi_fc = None
-                if job.hasAOI:
-                    aoi_fc = arcpy.GetJobAOI_wmx(job_id, "Job_Layer")
 
+                # add job AOI to database
+                if job.hasAOI:
+                    job_lyr = arcpy.GetJobAOI_wmx(job_id, "Job_Layer")
+
+
+                # if the AOI feature class exists in the input feature class, use it
+                # the Extract AOI tool creates this feature class and it is the
+                # buffered job extent
+                if arcpy.Exists(input_workspace + "\\AOI"):
+                    aoi_fc = input_workspace + "\\AOI"
                 else:
-                    if arcpy.Exists(input_workspace + "\\AOI"):
-                        aoi_fc = input_workspace + "\\AOI"
+                    # if the AOI feature class does not exist use the Job AOI
+
+                    aoi_fc = job_lyr
+
+##                else:
+##                    if arcpy.Exists(input_workspace + "\\AOI"):
+##                        aoi_fc = input_workspace + "\\AOI"
 
                 if aoi_fc:
                     gen_name = job_name + "_Generalize"
@@ -88,8 +176,8 @@ def main():
                     if not arcpy.Exists(scratch_db):
                         arcpy.CreateFileGDB_management(output_folder, scratch_db_name)
 
-                    if arcpy.Exists(scratch_db):
-                        arcpy.AddMessage("Scratch database: " + str(scratch_db))
+                    arcpy.env.workspace = scratch_db
+
 
 
                     #input_path = os.path.dirname(input_workspace)
@@ -117,7 +205,8 @@ def main():
                     arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'PrepareData', count)
+                    arcpy.AddMessage("Prepping Transportation")
+                    splitLines(gen_workspace, job_lyr, names=['TransportationGroundCrv'])
 
                     #Run the transportation script
                     arcpy.AddMessage("Running Transportation Model")
@@ -125,9 +214,10 @@ def main():
                     arcpy.Transportation_CTM50KGeneralization(gen_workspace, scratch_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
+                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'Transportation', count)
+
 
                     #Run the buildings script
                     arcpy.AddMessage("Running Building Model")
@@ -135,9 +225,10 @@ def main():
                     arcpy.Buildings_CTM50KGeneralization(gen_workspace, scratch_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
+                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'Building', count)
+
 
                     #Run the hydro script
                     arcpy.AddMessage("Running Hydrography Model")
@@ -145,9 +236,10 @@ def main():
                     arcpy.Hydro_CTM50KGeneralization(gen_workspace, scratch_workspace, scratch_db)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
+                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'Hydro', count)
+
 
                     #Run the Land Cover script
                     arcpy.AddMessage("Running Land Cover Model")
@@ -155,19 +247,21 @@ def main():
                     arcpy.arcpy.LandCov_CTM50KGeneralization(gen_workspace, scratch_workspace, scratch_db)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
+                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'LandCov', count)
+
 
                     #Run the Elev script
                     arcpy.AddMessage("Running Elevation Model")
                     start = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.Elev_CTM50KGeneralization(gen_workspace, scratch_workspace)
+                    arcpy.Elev_CTM50KGeneralization(gen_workspace, scratch_db)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
+                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'Elev', count)
+
 
                     #Run the Symbology script
                     arcpy.AddMessage("Running Apply Symbology Model")
@@ -175,9 +269,16 @@ def main():
                     arcpy.ApplySymbology_CTM50KGeneralization(gen_workspace, product_library, vvs)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
+                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'Symbology', count)
+
+                    #update hierarchy for edge features
+                    feature_classes = getfcs(gen_workspace)
+                    job_lines = arcpy.FeatureToLine_management(job_lyr, "job_lines")
+                    setEdgeHierarchy(feature_classes, job_lines, "Hierarchy")
+
+
 
                     #Run the line conflicts script
                     arcpy.AddMessage("Running Line Conflicts Model")
@@ -185,9 +286,10 @@ def main():
                     arcpy.ResolveLine_CTM50KGeneralization(gen_workspace, scratch_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
+                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'ResolveLine', count)
+
 
                     #Run the point conflicts script
                     arcpy.AddMessage("Running Structure Conflicts Model")
@@ -195,19 +297,21 @@ def main():
                     arcpy.ResolveStructure_CTM50KGeneralization(gen_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
+                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'ResolveStructure', count)
+
 
                     #Run the hydro conflicts script
                     arcpy.AddMessage("Running Hydro Conflicts Model")
                     start = datetime.datetime.now().replace(microsecond=0)
-                    arcpy.ResolveHydro_CTM50KGeneralization(gen_workspace, scratch_workspace)
+                    arcpy.ResolveHydro_CTM50KGeneralization(gen_workspace, scratch_db)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
+                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'ResolveHydro', count)
+
 
                     #Run the veg conflicts script
                     arcpy.AddMessage("Running Vegetation Conflicts Model")
@@ -215,9 +319,20 @@ def main():
                     arcpy.ResolveVeg_CTM50KGeneralization(gen_workspace, scratch_workspace)
                     arcpy.AddMessage(arcpy.GetMessages())
                     end = datetime.datetime.now().replace(microsecond=0)
+                    arcpy.AddMessage(arcpy.GetMessages())
                     arcpy.AddMessage("Took " + str(end - start))
 
-                    count = create_backup(backup, gen_workspace, output_folder, 'ResolveVeg', count)
+
+
+                    arcpy.AddMessage("Creating Backup")
+                    out = output_folder + '\\' + job_name + 'after_generalization.gdb'
+                    arcpy.Copy_management(gen_workspace, out)
+
+                    #final updates
+                    feature_classes = getfcs(gen_workspace)
+                    updateOverrides(feature_classes)
+
+
                 else:
                     arcpy.AddError("Job " + str(job_id) + " does not have an area of interest.")
             else:
@@ -226,13 +341,15 @@ def main():
             arcpy.AddError("Cannot connect to Workflow Manager.  Ensure you have a default Workflow Manager connection.")
     except:
         arcpy.AddError("Unknown error running generalization models.")
-        arcpy.AddMessage(arcpy.GetMessages())
+        arcpy.AddError(arcpy.GetMessages(2))
 
     finally:
 
         end_end = datetime.datetime.now().replace(microsecond=0)
 
         arcpy.AddMessage("Took Total " + str(end_end - start_start))
+
+
 
 
 if __name__ == '__main__':
