@@ -1,7 +1,5 @@
-CTM
+CTM 
 ===
-
-Civilian Topographic Map (CTM)
 
 Civilian Topographic Map (CTM) is designed to allow users to easily create civilian style topographic data and maps using Esri Production Mapping.  CTM includes a geodatabase data model as well as sample configurations for editing, quality assurance, and cartography.  CTM provides the ability to collect and edit data that is suited for creating a 25K scale civilian style topographic map.  CTM provides generalization models to automate the production of 50K cartographic data from larger scale CTM data, such as the sample 25K data provided.  The Map Generation python toolbox automates the process for creating maps for unique areas of interest (AOI) for both the 25K and 50K scale map products.  The Map Generation functionality works on ArcGIS Desktop and ArcGIS Server which allows CTM to be configured as a map product for Product on Demand (POD), a web application that allows users to create high quality cartographic products through a light weight web interface.  More information on POD can be found at:  https://github.com/Esri/product-on-demand.
 
@@ -21,6 +19,8 @@ Features
   - Map Generator Python Toolbox 
   - Product Library (contains the editing and cartographic specifications)
   - Generalization Toolbox
+  - Distributed Generalization Toolbox
+  - Distributed Generalization Workflow Manager Configuration(.jxl) 
 
 
 Instructions
@@ -31,9 +31,9 @@ Instructions
 
 Requirements:
 ---
-  1.  ArcGIS 10.4.1
-  2.  Esri Production Mapping 10.4.1 Patch 1
-  3.  ArcGIS Workflow Manager 10.4.1
+  1.  ArcGIS 10.5 
+  2.  Esri Production Mapping 10.5 Patch 1
+  3.  ArcGIS Workflow Manager 10.5
 
   
 Contributing
@@ -44,7 +44,7 @@ Esri welcomes contributions from anyone and everyone. Please see our guidelines 
 Licensing
 ---
 
-Copyright 2015 Esri
+Copyright 2017 Esri
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
