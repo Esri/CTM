@@ -466,9 +466,9 @@ class ResourceMXD(object):
                                     datatype="DEWorkspace",
                                     parameterType="Required")
 
-        #input_job_id.value = 4505
-        #job_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_4505"
-        #workspace.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_4505\Job_4505_Replica.gdb"
+        #input_job_id.value = 1
+        #job_folder.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_1"
+        #workspace.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_1\Job_1_Replica.zip"
         
         params = [input_job_id, job_folder, workspace]
         return params
@@ -498,6 +498,11 @@ class ResourceMXD(object):
             input_job_id = str(parameters[0].value)
             job_folder = str(parameters[1].value)
             workspace = str(parameters[2].value)
+            
+            filename, file_extension = os.path.splitext(workspace)
+            if file_extension == ".zip":
+                arcpy.AddError("The Replica Database is still compressed.  Please unzip the File Geodatabase and update the Extended Property Table in the Job.")
+                raise arcpy.ExecuteError()
             
             arcpy.AddMessage("The job folder value is: " + job_folder)
             arcpy.AddMessage("The job workspace value is: " + workspace)
@@ -927,10 +932,10 @@ class CreateDataReviewerDatabase(object):
 
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
-#def main():
-    #g = CreateReplicaFileGDB()
-    #par = g.getParameterInfo()
-    #g.execute(par, None)
+def main():
+    g = ResourceMXD()
+    par = g.getParameterInfo()
+    g.execute(par, None)
 
-#if __name__ == '__main__':
-    #main()
+if __name__ == '__main__':
+    main()
