@@ -38,8 +38,74 @@ class Toolbox(object):
         self.label = "Fixed Tools"
         self.alias = "fixedTools"
         # List of tool classes associated with this toolbox
-        self.tools = [MapGenerator_25K, MapGenerator_50K, DesktopGateway]
+        self.tools = [MapGenerator_10K, MapGenerator_25K, MapGenerator_50K, DesktopGateway, WorkflowManagerGateway]
               
+
+class MapGenerator_10K(object):
+    """ Class that contains the code to generate a new map based off the input aoi"""
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "10K Map Generation JSON"
+        self.description = "Python Script used to create the a new map at a 1:10,000 scale"
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        """Define parameter definitions"""
+        product_as_json = arcpy.Parameter(name="product_as_json",
+                                          displayName="Product As JSON",
+                                          direction="Input",
+                                          datatype="GPString",
+                                          parameterType="Required")
+
+        output_file = arcpy.Parameter(name="output_file",
+                                      displayName="Output File",
+                                      direction="Output",
+                                      datatype="GPString",
+                                      parameterType="Derived")
+
+        # For Debugging and testing
+        #product_as_json.value = '{"productName":"Fixed 10K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_10K","mxd":"CTM10KTemplate.mxd","gridXml":"CTM_10K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-11693773.796130067,4821515.2322030328],[-11693773.796130067,4826804.1131526073],[-11686908.096515434,4826804.1131526073],[-11686908.096515434,4821515.2322030328],[-11693773.796130067,4821515.2322030328]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":false,"productionPDFXML":"CTM_10K_Production_PDF.xml","mapSheetName":"AJ66","customName":""}'
+        
+        
+        
+        #product_as_json.value = '{"productName":"Fixed 10K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_10K","mxd":"CTM10KTemplate.mxd","gridXml":"CTM_10K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-8551577.7288922314,4739417.0109083317],[-8551577.7288922314,4744662.8210506225],[-8544712.0292775929,4744662.8210506225],[-8544712.0292775929,4739417.0109083317],[-8551577.7288922314,4739417.0109083317]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":true,"productionPDFXML":"CTM_10K_Production_PDF.xml","mapSheetName":"KR470","customName":""}'
+        
+        #product_as_json.value = '{"productName":"Fixed 10K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_10K","mxd":"CTM10KTemplate.mxd","gridXml":"CTM_10K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-8592771.926691357,4707999.1186119309],[-8592771.926691357,4713228.6767899953],[-8585906.227076726,4713228.6767899953],[-8585906.227076726,4707999.1186119309],[-8592771.926691357,4707999.1186119309]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":true,"productionPDFXML":"CTM_10K_Production_PDF.xml","mapSheetName":"KX464","customName":""}'
+         
+        #product_as_json.value = '{"productName":"Fixed 10K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_10K","mxd":"CTM10KTemplate.mxd","gridXml":"CTM_10K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"Production PDF","exportOption":"Export","geometry":{"rings":[[[-8249486.9445124641,510766.450768492],[-8249486.9445124641,514848.170851268],[-8242621.24489783,514848.170851268],[-8242621.24489783,510766.450768492],[-8249486.9445124641,510766.450768492]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":true,"productionPDFXML":"CTM_10K_Production_PDF.xml","mapSheetName":"BJV514","customName":""}' 
+        
+        
+        product_as_json.value = '{"productName":"Fixed 10K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_10K","mxd":"CTM10KTemplate.mxd","gridXml":"CTM_10K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"Production PDF","exportOption":"Export","geometry":{"rings":[[[-2441105.0450392119,9371226.2895797789],[-2441105.0450392119,9380541.6198823266],[-2434239.3453132547,9380541.6198823266],[-2434239.3453132547,9371226.2895797789],[-2441105.0450392119,9371226.2895797789]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":true,"productionPDFXML":"CTM_10K_Production_PDF.xml","mapSheetName":"F1360","customName":""}'
+        
+        params = [product_as_json, output_file]
+        return params
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        if arcpy.CheckExtension("foundation") == "Available":
+            return True
+        return False
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        return
+    
+    def execute(self, parameters, messages):
+        # Calls the Map Generation logic.
+        product_json = parameters[0].value
+        map_generator_class = MapGenerator()
+        create_map_method = getattr(map_generator_class, 'createmap')
+        outfile = create_map_method(product_json)
+        parameters[1].value = outfile
+        return              
 
 class MapGenerator_25K(object):
     """ Class that contains the code to generate a new map based off the input aoi"""
@@ -47,7 +113,7 @@ class MapGenerator_25K(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "25K Map Generation JSON"
-        self.description = "Python Script used to create the a new map at a 1:25000 scale"
+        self.description = "Python Script used to create the a new map at a 1:25,000 scale"
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -66,6 +132,9 @@ class MapGenerator_25K(object):
 
         # For Debugging and testing
         #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_25K","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453868.023369277,4938869.1756399116],[-12446910.558979558,4938869.1756399116],[-12439953.094812483,4938869.1756399116],[-12439953.094812483,4929723.7623885619],[-12439953.094812483,4920586.8467766969],[-12446910.558979558,4920586.28025827],[-12453868.023369277,4920586.8467766969],[-12453868.023369277,4929723.7623885619],[-12453868.023369277,4938869.1756399116]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":true,"layout_rules":"CTM_Layout_Rules.xml","mapSheetName":"Lehi ","customName":""}'
+        
+        product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_25K","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-11688546.532291846,4847793.6502787014],[-11681589.067902127,4847794.2127906624],[-11674631.603512408,4847794.2127906624],[-11674631.603512408,4838732.5888762595],[-11674631.603512408,4829679.2004912039],[-11681589.067902127,4829679.2004912039],[-11688546.532291846,4829678.6391460216],[-11688546.532291846,4838732.5888762595],[-11688546.532291846,4847793.6502787014]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":false,"layout_rules":"CTM_Layout_Rules.xml","productionPDFXML":"CTM_25K_Production_PDF.xml","mapSheetName":"Commerce City ","customName":""}'
+        
         params = [product_as_json, output_file]
         return params
 
@@ -102,7 +171,7 @@ class MapGenerator_50K(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "50K Map Generation JSON"
-        self.description = "Python Script used to create the a new map at a 1:50000 scale"
+        self.description = "Python Script used to create the a new map at a 1:50,000 scale"
         self.canRunInBackground = False
 
         #Path to the AGS Output Directory
@@ -125,7 +194,7 @@ class MapGenerator_50K(object):
                                       parameterType="Derived")
 
         # For Debugging and testing
-        #product_as_json.value = '{"productName":"Fixed 25K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_25K","mxd":"CTM25KTemplate.mxd","gridXml":"CTM_25K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12453868.023369277,4957185.0579098556],[-12446910.558979558,4957185.6017564684],[-12439953.094812483,4957185.6017564684],[-12439953.094812483,4948023.1131076179],[-12439953.094812483,4938869.1756399116],[-12446910.558979558,4938869.1756399116],[-12453868.023369277,4938869.1756399116],[-12453868.023369277,4948023.1131076179],[-12453868.023369277,4957185.0579098556]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","keep_mxd_backup":false,"mapSheetName":"Draper ","customName":""}'
+        #product_as_json.value = '{"productName":"Fixed 50K","makeMapScript":"Fixed_MapGenerator.pyt","toolName":"MapGenerator_50K","mxd":"CTM50KTemplate.mxd","gridXml":"CTM_50K_UTM_WGS84_grid.xml","pageMargin":"4.5 8 23 8 CENTIMETERS","exporter":"PDF","exportOption":"Export","geometry":{"rings":[[[-12439953.094701165,4920586.8467766969],[-12446910.559090884,4920586.28025827],[-12453868.023369277,4920586.8467766969],[-12453868.023369277,4929723.7623885619],[-12453868.023369277,4938869.1754935188],[-12453868.023369277,4948023.1131076179],[-12453868.023369277,4957185.0579098556],[-12446910.559090884,4957185.601903135],[-12439953.094701165,4957185.601903135],[-12432995.630311446,4957185.601903135],[-12426038.166033052,4957185.601903135],[-12426038.166033052,4948023.1131076179],[-12426038.166033052,4938869.1754935188],[-12426038.166033052,4929723.7623885619],[-12426038.166033052,4920586.8467766969],[-12432995.630311446,4920586.8467766969],[-12439953.094701165,4920586.8467766969]]],"spatialReference":{"wkid":102100,"latestWkid":3857}},"angle":0,"pageSize":"CUSTOM PORTRAIT 63 88 CENTIMETERS","productionPDFXML":"CTM_50K_Production_PDF.xml","mapSheetName":"Draper","customName":""}'
         params = [product_as_json, output_file]
         return params
 
@@ -472,6 +541,7 @@ class MapGenerator(object):
             for layer in layerlist:
                 broken_layer = layer.isBroken
                 if broken_layer == True:
+                    arcpy.AddError("Layer: " + str(layer.name) + " is broken.")
                     arcpy.AddError("Map Document has broken data sources.")
                     exit(0)
 
@@ -607,6 +677,7 @@ class MapGenerator(object):
                 # Updates the data frame properties base on the grid
                 final_mxd.activeView = 'PAGE_LAYOUT'
                 grid.updateDataFrameProperties(data_frame, aoi)
+                aoi_polygon = aoi
 
                 arcpy.AddMessage("Dataframe's extent is now = " + str(data_frame.extent))
 
@@ -632,9 +703,49 @@ class MapGenerator(object):
                 arcpy.AddMessage("making the feature outline masks")
                 masks = arcpy.FeatureOutlineMasks_cartography(anno_layer, annomask_fc,
                                                               grid.scale, grid.baseSpatialReference.GCS,
-                                                              '2.5 Points', 'CONVEX_HULL',
+                                                              '6 Points', 'CONVEX_HULL',
                                                               'ALL_FEATURES')
                 # Masking the grid ladder values and annotations
+                # getting the list of additional layers to mask with the grid anno mask
+                map_aoi_layer = None
+                structuresrf_layer = None
+                storagesrf_layer = None
+                culturepnt_layer = None
+                FacilityPnt_layer = None
+                HydroAidNavigationPnt_layer = None
+                TransportationGroundPnt_layer = None
+                UtilityInfrastructurePnt_layer = None
+                StoragePnt_layer = None
+                StorageSrf_layer = None
+                TransportationGroundSrf_layer = None
+                
+                layers = arcpy.mapping.ListLayers(final_mxd, "", data_frame)
+                for layer in layers:
+                    print str(layer.name)
+                    if layer.name == "Map_AOI":
+                        map_aoi_layer = layer
+                        layer_sr = arcpy.Describe(layer).spatialReference
+                    elif layer.name == "StructureSurfaces":
+                        structuresrf_layer = layer
+                    elif layer.name == "StorageSurfaces":
+                        storagesrf_layer = layer
+                    elif layer.name == "CulturePoints":
+                        culturepnt_layer = layer
+                    elif layer.name == "FacilityPoints":
+                        FacilityPnt_layer = layer
+                    elif layer.name == "HydroAidNavigationPoints":
+                        HydroAidNavigationPnt_layer = layer
+                    elif layer.name == "TransportationGroundPoints":
+                        TransportationGroundPnt_layer = layer
+                    elif layer.name == "UtilityInfrastructurePoints":
+                        UtilityInfrastructurePnt_layer = layer
+                    elif layer.name == "StoragePoints":
+                        StoragePnt_layer = layer
+                    elif layer.name == "TransportationGroundSurfaces":
+                        TransportationGroundSrf_layer = layer                        
+                del layers, layer
+
+                # Creates a new AOI Feature class to
                 arcpy.AddMessage("getting output of masks.")
                 anno_mask_layer = arcpy.mapping.Layer(masks.getOutput(0))
                 arcpy.mapping.AddLayer(data_frame, anno_mask_layer, 'BOTTOM')
@@ -642,6 +753,16 @@ class MapGenerator(object):
                 arcpy.AddMessage("Annotation Mask '" + anno_mask.name + "' layer added to the map...")
                 arcpyproduction.mapping.EnableLayerMasking(data_frame, 'true')
                 arcpyproduction.mapping.MaskLayer(data_frame, 'APPEND', anno_mask, gridline_layer)
+                arcpyproduction.mapping.MaskLayer(data_frame, 'APPEND', anno_mask, structuresrf_layer)
+                arcpyproduction.mapping.MaskLayer(data_frame, 'APPEND', anno_mask, storagesrf_layer)
+                arcpyproduction.mapping.MaskLayer(data_frame, 'APPEND', anno_mask, culturepnt_layer)
+                if FacilityPnt_layer != None:
+                    arcpyproduction.mapping.MaskLayer(data_frame, 'APPEND', anno_mask, FacilityPnt_layer)
+                arcpyproduction.mapping.MaskLayer(data_frame, 'APPEND', anno_mask, HydroAidNavigationPnt_layer)
+                arcpyproduction.mapping.MaskLayer(data_frame, 'APPEND', anno_mask, TransportationGroundPnt_layer)
+                arcpyproduction.mapping.MaskLayer(data_frame, 'APPEND', anno_mask, UtilityInfrastructurePnt_layer)
+                arcpyproduction.mapping.MaskLayer(data_frame, 'APPEND', anno_mask, StoragePnt_layer)
+                arcpyproduction.mapping.MaskLayer(data_frame, 'APPEND', anno_mask, TransportationGroundSrf_layer)
                 arcpy.AddMessage("Masking applied to gridlines...")
 
                 #Clips the Data Frame to the AOI and exculdes the Grid
@@ -653,11 +774,14 @@ class MapGenerator(object):
                 data_frame_list = arcpy.mapping.ListDataFrames(final_mxd)
                 adjoining_data_frame = None
                 location_data_frame = None
+                boundaries_data_frame = None
                 for b_data_frame in data_frame_list:
                     if b_data_frame.name == "AdjoiningSheet":
                         adjoining_data_frame = b_data_frame
                     elif b_data_frame.name == "LocationDiagram":
                         location_data_frame = b_data_frame
+                    elif b_data_frame.name == "Boundaries":
+                        boundaries_data_frame = b_data_frame
 
                 #Gets the list of layout elements
                 layout_elements = arcpy.mapping.ListLayoutElements(final_mxd)
@@ -670,17 +794,6 @@ class MapGenerator(object):
 
                 arcpy.AddMessage("This is a custom extent")
 
-                map_aoi_layer = None
-
-                # Creates a new AOI Feature class to
-                layers = arcpy.mapping.ListLayers(final_mxd, "", data_frame)
-                for layer in layers:
-                    if layer.name == "Map_AOI":
-                        map_aoi_layer = layer
-                        layer_sr = arcpy.Describe(layer).spatialReference
-                        break
-                del layers, layer
-
                 # Creates a temporary AOI feature class
                 custom_aoi_fc = arcpy.CreateFeatureclass_management(scratch_workspace,
                                                                     "Custom_Map_AOI",
@@ -689,9 +802,9 @@ class MapGenerator(object):
                                                                     "",
                                                                     "",
                                                                     layer_sr)
-                arcpy.AddField_management(custom_aoi_fc, "AOI_Name", "TEXT")
+                arcpy.AddField_management(custom_aoi_fc, "PageName", "TEXT")
                 # Creates the AOI feature in the AOI Feature class
-                insert_fields = ['SHAPE@', "AOI_Name"]
+                insert_fields = ['SHAPE@', "PageName"]
                 in_cur = arcpy.da.InsertCursor(custom_aoi_fc, insert_fields)
                 in_cur.insertRow([aoi, product.mapSheetName])
 
@@ -705,6 +818,7 @@ class MapGenerator(object):
 
                 #Updating the Adjoining Sheet Guide
                 layers = arcpy.mapping.ListLayers(final_mxd, "", adjoining_data_frame)
+                aoi_layer = None
                 for layer in layers:
                     if layer.name == "Index_AOI":
                         # Copies the symbology from the existing AOI Layer
@@ -715,13 +829,32 @@ class MapGenerator(object):
                         arcpy.mapping.RemoveLayer(adjoining_data_frame, layer)
                         # Pans and zooms the DF to the correct location for the new AOI Layer
                         adjoining_data_frame.panToExtent(custom_aoi_lyr.getSelectedExtent())
-                        break
+                    elif layer.name == "AOIs_10K":
+                        aoi_layer = layer
+                        
+                if product.productName == "Fixed 10K":
+                    arcpy.SelectLayerByLocation_management(aoi_layer, 'INTERSECT', custom_aoi_lyr, '#', 'NEW_SELECTION', 'NOT_INVERT')
+                    
+                    page_names = []
+                    def_query = "PageName In ("
+                    with arcpy.da.SearchCursor(aoi_layer, ['PageName']) as s_cur:
+                        for row in s_cur:
+                            page_names.append(str(row[0]))
+                            def_query = def_query + "'" + str(row[0] + "', ")
+                         
+                    def_query = def_query[:-2]
+                    def_query = def_query + ")"
+                    arcpy.SelectLayerByAttribute_management(aoi_layer, 'CLEAR_SELECTION')
+                    aoi_layer.definitionQuery = def_query
+                    arcpy.AddMessage("The adjoinging sheet data defintion query is: " + str(def_query))
+    
+                    adjoining_data_frame.spatialReference = data_frame.spatialReference
+                    adjoining_data_frame.rotation = data_frame.rotation
+
                 arcpy.AddMessage("Updated the Adjoining Sheet Data Frame...")
                 del layers
 
                 # Updating the Location Data Frame
-                location_data_frame.spatialReference = grid.baseSpatialReference
-
                 layers = arcpy.mapping.ListLayers(final_mxd, "", location_data_frame)
                 index_aoi = None
                 us_states = None
@@ -729,14 +862,14 @@ class MapGenerator(object):
                 for layer in layers:
                     if layer.name == "Index_AOI":
                         index_aoi = layer
-                    elif layer.name == "US_States":
+                    elif layer.name == "States":
                         us_states = layer
                 del layers
-
-                # Adding the custom AOI Layer
-                arcpy.mapping.AddLayer(location_data_frame, custom_aoi_lyr, "TOP")
-                # Removing the current AOI Index Layer
-                arcpy.mapping.RemoveLayer(location_data_frame, index_aoi)
+                
+                us_states.definitionQuery = ""
+                index_aoi.definitionQuery = ""
+                
+                index_aoi.replaceDataSource(scratch_workspace, "FILEGDB_WORKSPACE", "Custom_Map_AOI")
 
                 state_name = None
                 state_extent = None
@@ -747,12 +880,51 @@ class MapGenerator(object):
                             state_name = row[1]
                             state_extent = row[0].extent
                             break
+                if state_extent == None:
+                    with arcpy.da.SearchCursor(us_states, ["SHAPE@", "STATE_NAME"]) as s_cursor:
+                        for row in s_cursor:
+                            geo = row[0]
+                            if geo.overlaps((arcpy.AsShape(json.dumps(product.geometry), True)).projectAs(grid.baseSpatialReference.GCS)) == True:
+                                state_name = row[1]
+                                state_extent = row[0].extent
+                                break                
 
                 # Updating the States Layer with the correct State
                 us_states.definitionQuery = "STATE_NAME = '" + str(state_name) + "'"
                 location_data_frame.extent = state_extent
-                location_data_frame.scale = location_data_frame.scale * 1.2
-                arcpy.AddMessage("Updating the Location Data Frame...")
+                location_data_frame.scale = location_data_frame.scale * 1.05
+                arcpy.AddMessage("Updated the Location Data Frame...")
+
+                # Adding logic for the 10K Boundaries Data Frame
+                if product.productName == "Fixed 10K":
+                    
+                    layers = arcpy.mapping.ListLayers(final_mxd, "", boundaries_data_frame)
+                    index_aoi = None
+    
+                    for layer in layers:
+                        if layer.name == "Index_AOI":
+                            index_aoi = layer
+                        break
+    
+                    boundaries_data_frame.spatialReference = data_frame.spatialReference
+                    
+                    arcpy.ApplySymbologyFromLayer_management(custom_aoi_lyr, index_aoi)
+                    arcpy.mapping.AddLayer(boundaries_data_frame, custom_aoi_lyr, "TOP") 
+                    arcpy.mapping.RemoveLayer(boundaries_data_frame, index_aoi)
+                    
+                    
+                    aoi_extent = None
+                    with arcpy.da.SearchCursor(custom_aoi_lyr, ["SHAPE@"]) as s_cursor:
+                        for row in s_cursor:
+                            aoi_extent = row[0]
+                            break 
+                    
+                    boundaries_data_frame.extent = aoi_extent
+                    boundaries_data_frame.rotation = data_frame.rotation
+                    boundaries_data_frame.scale = boundaries_data_frame.scale * 1.01
+                    arcpyproduction.mapping.ClipDataFrameToGeometry(boundaries_data_frame, aoi_extent)
+    
+                    arcpy.AddMessage("Updated the Boundaries Data Frame...")
 
                 # Setting the Map Sheet Information
                 map_aoi_layer.definitionQuery = ""
@@ -804,6 +976,7 @@ class MapGenerator(object):
                                                                   map_doc_name, data_frame,
                                                                   self.outputdirectory, product.exporter) 
                 
+                #final_mxd.save()
 
                 if "keep_mxd_backup" in product.keys():
                     arcpy.AddMessage("Keep mxd value is " + str(product.keep_mxd_backup))
@@ -812,7 +985,7 @@ class MapGenerator(object):
                         arcpy.AddMessage("Cleaning up all the intermediate data.")
                         arcpy.Delete_management(gfds)
                         del final_mxd, grid, custom_aoi_layer, custom_aoi_lyr
-                        arcpy.Delete_management(final_mxd_path)
+                        #arcpy.Delete_management(final_mxd_path)
                         arcpy.Delete_management(os.path.join(scratch_workspace, "Custom_Map_AOI"))
 
                 return file_name
@@ -998,7 +1171,7 @@ class DesktopGateway(object):
                     product_name = os.path.basename(direcotry)
                     # Creating the JSON Sting
                     input_json = json.dumps({'productName': product_name, 'mxd': str(map_template_file), 'gridXml': str(grid_xml_file), 'exporter': str(export_type), 'exportOption': 'Export', 'geometry': json.loads(row[0]), 'quad_id': str(row[2]), 'mapSheetName': map_name, 'customName': '', 'workingDirectory': str(working_directory), 'productionWorkspace': str(production_workspace), 'productionPDFXML': str(production_pdf_xml), 'keep_mxd_backup': keep_mxd}, sort_keys=True, separators=(',', ': '))
-                    print input_json
+                    #print input_json
 
                     # Calls the Map Generation locgic
                     arcpy.AddMessage("Call the Map Generation tool for the: " + map_name + " AOI.")
@@ -1056,15 +1229,231 @@ class DesktopGateway(object):
         except Exception as ex:
             arcpy.AddError("Unexpected Error: " + ex.message)
 
+class WorkflowManagerGateway(object):
+    """ Class that contains the code to generate a new map based off the input aoi"""
+
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Map Generation Workflow Manager"
+        self.description = "Python Script used to call the Map Generator script in WMX."
+        self.canRunInBackground = False
+
+        #Path to the AGS Output Directory
+        self.outputdirectory = output_directory
+        # Path to MCS_POD's Product Location
+        self.shared_prod_path = shared_products_path
+
+    def getParameterInfo(self):
+        """Define parameter definitions"""
+        wmx_job_id = arcpy.Parameter(name="wmx_job_id",
+                                  displayName="WMX Job ID",
+                                  direction="Input",
+                                  datatype="GPString",
+                                  parameterType="Required")
+        
+        map_name = arcpy.Parameter(name="map_name",
+                                          displayName="Map Name",
+                                          direction="Input",
+                                          datatype="GPString",
+                                          parameterType="Required")        
+
+        grid_xml = arcpy.Parameter(name="grid_xml",
+                                   displayName="Grid and Graticules XML",
+                                   direction="Input",
+                                   datatype="DEFile",
+                                   parameterType="Required")
+
+        export_type = arcpy.Parameter(name="export_type",
+                                      displayName="Export Type",
+                                      direction="Input",
+                                      datatype="GPString",
+                                      parameterType="Required")
+
+        working_directory = arcpy.Parameter(name="working_directory",
+                                            displayName="Working Directory",
+                                            direction="Input",
+                                            datatype="DEFolder",
+                                            parameterType="Required")
+
+        production_workspace = arcpy.Parameter(name="production_workspace",
+                                               displayName="Production Workspace",
+                                               direction="Input",
+                                               datatype="DEWorkspace",
+                                               parameterType="Optional")
+
+        production_pdf_xml = arcpy.Parameter(name="production_pdf_xml",
+                                             displayName="Production PDF XML",
+                                             direction="Input",
+                                             datatype="DEFile",
+                                             parameterType="Optional")
+
+        keep_mxd = arcpy.Parameter(name="keep_mxd",
+                                   displayName="Keep Output MXD",
+                                   direction="Input",
+                                   datatype="GPBoolean",
+                                   parameterType="Optional")
+
+        output_file = arcpy.Parameter(name="output_file",
+                                      displayName="Output File",
+                                      direction="Output",
+                                      datatype="GPString",
+                                      parameterType="Derived")
+
+        grid_xml.filter.list = ["xml"]
+        export_type.filter.type = "ValueList"
+        export_type.filter.list = ["PDF", "TIFF", "JPEG", "Multi-page PDF", "Production PDF", "Layout GeoTIFF", "Map Package"]
+        production_pdf_xml.filter.list = ["xml"]
+
+        params = [wmx_job_id, map_name, grid_xml, export_type, working_directory, production_pdf_xml, production_workspace, keep_mxd, output_file]
+
+        # Default Values for Debugging
+        #wmx_job_id.value = r"2846"
+        #map_name.value = "Test"
+        #grid_xml.value = r"C:\Data\MCS_POD\Fixed25K\Cartography\Grids\CTM_25K_UTM_WGS84_grid.xml"
+        #export_type.value = "PDF"
+        #working_directory.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_2846"
+        #production_workspace.value = r"C:\Data\MCS_POD\WorkflowManager\WMX_Store\WMX_JOB_2846\Job_2846_Replica.gdb"
+        #production_pdf_xml.value = r"C:\Data\MCS_POD\Fixed25K\Cartography\CTM_25K_Production_PDF.xml"
+        #keep_mxd.value = r"True"
+        return params
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        if arcpy.CheckExtension("foundation") == "Available":
+            return True
+        return False
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        if parameters[3].altered == True:
+            if parameters[3].value <> "Production PDF":
+                parameters[5].enabled = False
+            elif parameters[3].value == "Production PDF":
+                parameters[5].enabled = True
+                xml_value = parameters[5].value
+                if not xml_value:
+                    parameters[5].setErrorMessage("If Production PDF Exporter is chosen, a Production PDF color mapping XML file must be provided.")
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        try:
+            import arcpywmx
+            
+            # Getting the input parameters
+            wmx_job_id = parameters[0].value
+            map_name = parameters[1].value
+            grid_xml_file = parameters[2].value
+            export_type = parameters[3].value
+            working_directory = str(parameters[4].value)
+            production_pdf_xml = parameters[5].value
+            production_workspace = parameters[6].value
+            keep_mxd = parameters[7].value
+            arcpy.AddMessage("Keep MXD Value is: " + str(keep_mxd))
+
+            multi_page_pdf_list = []
+            output_files = []
+            
+            wmx_connection = arcpywmx.Connect()
+            arcpy.AddMessage("Establish connection to the default WMX configuration on this machine.")
+            job = wmx_connection.getJob(int(wmx_job_id)) 
+            arcpy.AddMessage("Retrieved the WMX Job Object.")
+        
+            # Retrives the Job Map Document and saves it to the Job Folder
+            map_template_file = (os.path.join(working_directory, "JOB_" + str(job.ID) + ".mxd"))
+            job.retrieveJobMap(map_template_file)
+            
+            # Gets the AOI Feature from the job
+            map_aoi = arcpy.GetJobAOI_wmx(wmx_job_id)
+            
+            if parameters[2].value == "Production PDF":
+                if not parameters[5].value:
+                    arcpy.AddError("If Production PDF Exporter is chosen, a Production PDF color mapping XML file must be provided.")
+                    exit(0)
+
+            # Getting output location from CTM_Utilities
+            if working_directory == "":
+                output_location = output_directory
+            else:
+                output_location = str(working_directory)
+
+            # Starting a Seach Cursor to loop through the AOI Layer
+            with arcpy.da.SearchCursor(map_aoi, ['SHAPE@JSON', 'OID@']) as scur:
+                for row in scur:
+                    # Getting the parent dirctory and file names for the template files
+                    direcotry = os.path.dirname(str(map_template_file))
+                    product_name = os.path.basename(direcotry)
+                    # Creating the JSON Sting
+                    input_json = json.dumps({'productName': "Fixed25K", 'mxd': str(map_template_file), 'gridXml': str(grid_xml_file), 'exporter': str(export_type), 'exportOption': 'Export', 'geometry': json.loads(row[0]), 'quad_id': "", 'mapSheetName': map_name, 'customName': '', 'workingDirectory': str(working_directory), 'productionWorkspace': str(production_workspace), 'productionPDFXML': str(production_pdf_xml), 'keep_mxd_backup': keep_mxd}, sort_keys=True, separators=(',', ': '))
+
+                    # Calls the Map Generation locgic
+                    arcpy.AddMessage("Call the Map Generation tool for the: " + map_name + " AOI.")
+                    
+                    
+                    map_generator_class = MapGenerator()
+                    create_map_method = getattr(map_generator_class, 'createmap')
+                    outfile = create_map_method(input_json)
+                    outfile = os.path.join(output_location, outfile)
+
+                    # Creates the array for the list of output(s)
+                    #if export_type == "Multi-page PDF":
+                        #multi_page_pdf_list.append(outfile)
+                    #else:
+                        #output_files.append(outfile)
+
+            ## Creates a Map Book for the multi-page PDFs
+            #map_book_name = ""
+            #if multi_page_pdf_list != []:
+
+                #MapGenerator_class = MapGenerator()
+                #time_stamp_method = getattr(MapGenerator_class, 'get_date_time')               
+                #map_book_name = "MultipagePDF_" + str(time_stamp_method()) + ".pdf"
+                #map_book_path = os.path.join(output_location, map_book_name)
+
+                ## Create the file and append pages
+                #pdfdoc = arcpy.mapping.PDFDocumentCreate(map_book_path)
+
+                ## Loops through each single page PDF and adds them together in 1 Mutli-page PDF
+                #for pdf_name in multi_page_pdf_list:
+                    #pdf_path = os.path.join(output_location, pdf_name)
+                    #pdfdoc.appendPages(pdf_path)
+
+                #pdfdoc.saveAndClose()
+                #output_files.append(os.path.join(output_location, map_book_name))
+
+                #arcpy.AddMessage("Output Files: " + json.dumps(output_files))
+
+                #for pdf in multi_page_pdf_list:
+                    #arcpy.Delete_management(pdf)
+                    
+            job.addAttachment('EMBEDDED', outfile)
+
+            #arcpy.SetParameterAsText(9, outfile)
+            return
+
+        except arcpy.ExecuteError:
+            arcpy.AddError(arcpy.GetMessages(2))
+        except SystemError:
+            arcpy.AddError("System Error: " + sys.exc_info()[0])
+        except Exception as ex:
+            arcpy.AddError("Unexpected Error: " + ex.message)
+
 
 # For Debugging Python Toolbox Scripts
 # comment out when running in ArcMap
-#def main():
-    ##g = DesktopGateway()
+def main():
     #g = DesktopGateway()
-    #par = g.getParameterInfo()
-    #g.execute(par, None)
+    g = MapGenerator_25K()
+    #g = MapGenerator_50K()
+    par = g.getParameterInfo()
+    g.execute(par, None)
 
-#if __name__ == '__main__':
-    #main()
+if __name__ == '__main__':
+    main()
 
