@@ -33,8 +33,8 @@ Requirements:
 ---
   1.  ArcGIS 10.5 
   2.  Esri Production Mapping 10.5 Patch 1
-  3.  ArcGIS Workflow Manager 10.5
-
+  3.  ArcGIS Workflow Manager (Classic) 10.5
+ > **Note:** ArcGIS Workflow Manager (Classic) has been deprecated. Learn more about the [deprecation of ArcGIS Workflow Manager (Classic)](https://support.esri.com/en-us/knowledge-base/arcgis-workflow-manager-classic-deprecation-000031190) and the new [service-based ArcGIS Workflow Manager](https://www.esri.com/en-us/arcgis/products/arcgis-workflow-manager/overview)
   
 Contributing
 ---
